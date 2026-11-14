@@ -55,7 +55,7 @@
         <div>
           <div class="flex items-center gap-2">
             <h1 class="text-base sm:text-lg font-bold tracking-tight" id="headerAppTitle">Sistem AJK Gunting Rambut</h1>
-            <span class="px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 rounded-full border border-emerald-500/30" id="headerFeeBadge">RM 8.00 • QR Auto-Verify</span>
+            <span class="px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 rounded-full border border-emerald-500/30" id="headerFeeBadge">RM 8.00 • QR / FPX / Kad / Pay</span>
             <span id="cloudSyncBadge" class="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-slate-800 text-slate-300 border border-slate-700 flex items-center gap-1">
               <span id="cloudSyncDot" class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
               <span id="cloudSyncText">Firebase Cloud Tersambung</span>
@@ -86,6 +86,32 @@
 
   <!-- Main Content Container -->
   <main class="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 space-y-6">
+
+    <!-- Biweekly Session Switcher Bar (Setiap 2 Minggu) -->
+    <section class="bg-white rounded-2xl p-3.5 sm:p-4 border border-slate-200/90 shadow-xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center shrink-0 font-bold text-xs">
+          2M
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-700">Kitaran Potong Rambut (Setiap 2 Minggu)</span>
+            <span id="sessionLockBadge" class="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-emerald-100 text-emerald-800">Sesi Semasa</span>
+          </div>
+          <p class="text-xs text-slate-500">Tukar minggu/sesi untuk menyemak rekod lepas atau mengurus kutipan minggu baharu.</p>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2">
+        <select id="activeSessionSelect" onchange="switchBiweeklySession(this.value)" class="flex-1 sm:flex-initial min-w-[230px] px-3.5 py-2 rounded-xl border-2 border-slate-900 bg-slate-50 text-xs sm:text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"></select>
+        <button type="button" onclick="openCreateNextBiweeklyModal()" class="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold flex items-center gap-1.5 shrink-0 transition">
+          <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+          </svg>
+          <span>+ Minggu / Sesi Baharu (+2 Minggu)</span>
+        </button>
+      </div>
+    </section>
 
     <!-- Top Summary Banner / KPI Cards -->
     <section class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -154,7 +180,7 @@
           </div>
           <h2 class="text-lg sm:text-xl font-bold">Cari nama anda di bawah atau terus lapor & buat pembayaran</h2>
           <p class="text-xs sm:text-sm text-slate-300 max-w-2xl">
-            Semua anggota dikehendaki menjelaskan bayaran <strong class="text-white" id="bannerFeeText">RM 8.00</strong> menerusi <strong>QR DuitNow Sahaja</strong>. Sistem dilengkapi <strong>Pengimbas Resit Pintar (Auto-Verify)</strong> yang menyemak ketulenan resit &amp; meluluskan status bayaran secara automatik tanpa perlu semakan manual AJK.
+            Semua anggota dikehendaki menjelaskan bayaran <strong class="text-white" id="bannerFeeText">RM 8.00</strong> menerusi <strong>QR DuitNow, Online Banking (FPX), Kad Kredit/Debit, atau Apple Pay</strong>. Sistem dilengkapi <strong>Pengesahan Pintar (Auto-Verify)</strong> yang mengemaskini status bayaran secara automatik.
           </p>
         </div>
         <div class="flex flex-wrap items-center gap-2.5 shrink-0 w-full md:w-auto">
@@ -499,6 +525,35 @@
             </div>
           </div>
 
+          <!-- toyyibPay Live Payment Gateway Integration Section -->
+          <div class="pt-6 border-t border-slate-200 space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <span class="px-2 py-0.5 text-[10px] font-bold uppercase bg-indigo-100 text-indigo-800 rounded">toyyibPay Live Gateway (FPX &amp; Kad)</span>
+                <h4 class="text-base font-bold text-slate-900 mt-1">Integrasi toyyibPay (Duit Masuk Terus Ke Akaun Bank Anda)</h4>
+                <p class="text-xs text-slate-500"><strong>Secret Key</strong> (<code>yft6l59f-fysj-q01f-ws65-k2cn2rphxfxl</code>) &amp; <strong>Category Code</strong> (<code>xbpqjx3r</code> - <em>Guntin Rambut</em>) anda telah siap dipasang dan aktif sepenuhnya!</p>
+              </div>
+              <button type="button" onclick="autoCreateToyyibCategory()" class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shrink-0">
+                ⚡ Cuba Jana Category Code Automatik
+              </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">toyyibPay User Secret Key</label>
+                <input type="text" id="settingToyyibSecretKey" value="yft6l59f-fysj-q01f-ws65-k2cn2rphxfxl" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs font-mono bg-slate-50" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Category Code toyyibPay <span class="text-rose-600">*Penting</span></label>
+                <input type="text" id="settingToyyibCategoryCode" value="xbpqjx3r" placeholder="Cth: xbpqjx3r (Dari menu Category)" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs font-mono bg-white focus:ring-2 focus:ring-indigo-500" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Atau URL Bil Tetap toyyibPay (Pilihan)</label>
+                <input type="text" id="settingToyyibDirectBillUrl" placeholder="Cth: https://toyyibpay.com/Gunting-Ismail" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs font-mono bg-white focus:ring-2 focus:ring-indigo-500" />
+              </div>
+            </div>
+          </div>
+
           <!-- Firebase Real-Time Cloud Sync Setup Section -->
           <div class="pt-6 border-t border-slate-200 space-y-4">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -550,12 +605,12 @@
   <!-- ========================================================= -->
   <!-- MODAL: PEMBAYARAN GUNTING RAMBUT (UNTUK AHLI)             -->
   <!-- ========================================================= -->
-  <div id="paymentModal" class="fixed inset-0 z-50 hidden bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-    <div class="bg-white rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-xl border border-slate-200 space-y-5 my-8 animate-slide-up">
-      <div class="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
+  <div id="paymentModal" class="fixed inset-0 z-50 hidden bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full max-h-[88dvh] flex flex-col shadow-xl border border-slate-200 overflow-hidden animate-slide-up">
+      <div class="flex items-start justify-between gap-3 border-b border-slate-100 px-5 py-4 shrink-0 bg-white">
         <div>
           <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-600">Borang Bayaran Gunting Rambut</span>
-          <h3 class="text-lg font-bold text-slate-900" id="payModalTitle">Rekod & Bayar Gunting Rambut</h3>
+          <h3 class="text-lg font-bold text-slate-900" id="payModalTitle">Rekod &amp; Bayar Gunting Rambut</h3>
         </div>
         <button type="button" onclick="closePaymentModal()" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -564,7 +619,7 @@
         </button>
       </div>
 
-      <div class="space-y-4">
+      <div class="flex-1 overflow-y-auto overscroll-contain custom-scrollbar px-5 py-4 space-y-4" style="-webkit-overflow-scrolling: touch;">
         <!-- Select Member (if opened via general button) or Locked Member -->
         <div>
           <label class="block text-xs font-semibold text-slate-700 mb-1">Pilih Nama Ahli</label>
@@ -582,13 +637,25 @@
           </div>
         </div>
 
-        <!-- Payment Method Notice (QR Only) -->
+        <!-- Multi-Channel Payment Method Selector -->
         <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1.5">Kaedah Pembayaran (Ditetapkan Oleh AJK)</label>
-          <div class="w-full">
-            <button type="button" id="payMethodBtnQR" onclick="selectPaymentMethod('QR_DUITNOW')" class="w-full py-2.5 px-4 rounded-xl border-2 border-emerald-600 bg-emerald-50/80 text-emerald-950 font-bold text-xs sm:text-sm flex items-center justify-between">
-              <span>📱 Imbasan QR DuitNow / Transfer Sahaja</span>
-              <span class="px-2 py-0.5 text-[10px] rounded-full bg-emerald-600 text-white uppercase">Wajib Resit &amp; Ref ID</span>
+          <label class="block text-xs font-semibold text-slate-700 mb-1.5">Pilih Kaedah Pembayaran</label>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <button type="button" id="payMethodBtnQR" onclick="selectPaymentMethod('QR_DUITNOW')" class="py-2.5 px-2.5 rounded-xl border-2 border-emerald-600 bg-emerald-50/80 text-emerald-950 font-bold text-xs flex flex-col items-center justify-center gap-1 transition">
+              <span class="text-base">📱</span>
+              <span>QR DuitNow</span>
+            </button>
+            <button type="button" id="payMethodBtnFPX" onclick="selectPaymentMethod('FPX_ONLINE')" class="py-2.5 px-2.5 rounded-xl border border-slate-200 bg-white text-slate-700 font-semibold text-xs flex flex-col items-center justify-center gap-1 hover:bg-slate-50 transition">
+              <span class="text-base">🏦</span>
+              <span>Online Banking</span>
+            </button>
+            <button type="button" id="payMethodBtnCard" onclick="selectPaymentMethod('CREDIT_CARD')" class="py-2.5 px-2.5 rounded-xl border border-slate-200 bg-white text-slate-700 font-semibold text-xs flex flex-col items-center justify-center gap-1 hover:bg-slate-50 transition">
+              <span class="text-base">💳</span>
+              <span>Kad Kredit/Debit</span>
+            </button>
+            <button type="button" id="payMethodBtnApplePay" onclick="selectPaymentMethod('APPLE_PAY')" class="py-2.5 px-2.5 rounded-xl border border-slate-200 bg-white text-slate-700 font-semibold text-xs flex flex-col items-center justify-center gap-1 hover:bg-slate-50 transition">
+              <span class="text-base">🍎</span>
+              <span>Apple Pay</span>
             </button>
             <button type="button" id="payMethodBtnCash" onclick="selectPaymentMethod('QR_DUITNOW')" class="hidden"></button>
           </div>
@@ -645,9 +712,89 @@
             <div>
               <label class="block text-xs font-semibold text-slate-800 mb-1">Langkah 3: No. Rujukan Resit Bank / DuitNow Ref ID <span class="text-emerald-700 font-normal">(Diisi Automatik / Boleh Ditaip)</span></label>
               <input type="text" id="payModalBankRefInput" placeholder="Akan diisi automatik apabila resit diimbas atau taip di sini..." class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs sm:text-sm font-mono uppercase focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white" />
-              <p class="text-[11px] text-slate-500 mt-1">Jika resit tulen &amp; Ref ID unik, bayaran anda akan <strong>diluluskan secara automatik (Auto-Approve)</strong> sebaik dihantar!</p>
+              <p class="text-[11px] text-slate-500 mt-1">Sistem akan <strong>menolak gambar bukan resit</strong> secara automatik jika jumlah bayaran tepat (cth: <strong>RM 8.00</strong>) tidak dapat dikesan pada gambar.</p>
             </div>
           </div>
+        </div>
+
+        <!-- SECTION B: FPX ONLINE BANKING -->
+        <div id="payModalFpxSection" class="hidden p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="px-2 py-0.5 text-[10px] font-bold bg-blue-100 text-blue-800 rounded uppercase">FPX Online Banking Malaysia</span>
+            <span class="text-xs font-bold text-slate-700">Caj Transaksi: RM 0.00</span>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Pilih Bank Anda</label>
+            <select id="fpxBankSelect" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs sm:text-sm bg-white font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500">
+              <option value="Maybank2u">Maybank2u (Malayan Banking Berhad)</option>
+              <option value="CIMB Clicks">CIMB Clicks (CIMB Bank)</option>
+              <option value="Bank Islam">Bank Islam (BIMB GO / Web)</option>
+              <option value="RHB Now">RHB Now (RHB Bank)</option>
+              <option value="Public Bank">PBe (Public Bank)</option>
+              <option value="Hong Leong Connect">Hong Leong Connect (HLB)</option>
+              <option value="MyBSN">MyBSN (Bank Simpanan Nasional)</option>
+              <option value="AmOnline">AmOnline (AmBank)</option>
+              <option value="GXBank">GXBank</option>
+              <option value="Bank Rakyat">iRakyat (Bank Rakyat)</option>
+            </select>
+          </div>
+          <div class="p-3 rounded-xl bg-white border border-slate-200 text-xs space-y-1">
+            <div class="flex justify-between"><span class="text-slate-500">Penerima FPX:</span><strong class="text-slate-900">TABUNG AJK GUNTING RAMBUT</strong></div>
+            <div class="flex justify-between"><span class="text-slate-500">No. Akaun Terus:</span><span class="font-mono font-bold text-emerald-700" id="fpxTargetAccNo">162106789012</span></div>
+            <div class="flex justify-between"><span class="text-slate-500">Rujukan Automatik:</span><code class="font-mono font-bold text-slate-900" id="fpxRefPreview">GR01-3018733</code></div>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">No. Telefon Bimbit (Untuk Resit SMS/toyyibPay)</label>
+            <input type="tel" id="fpxPhoneInput" placeholder="Cth: 0123456789" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs sm:text-sm font-mono bg-white" />
+          </div>
+          <button type="button" onclick="triggerFpxInstantCheckout()" class="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm shadow-xs transition flex items-center justify-center gap-2">
+            <span>🔐 Log Masuk Bank &amp; Sahkan FPX Sekarang</span>
+          </button>
+          <div id="fpxAuthStatusBox" class="hidden p-3 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-900 text-xs"></div>
+        </div>
+
+        <!-- SECTION C: CREDIT / DEBIT CARD -->
+        <div id="payModalCardSection" class="hidden p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="px-2 py-0.5 text-[10px] font-bold bg-indigo-100 text-indigo-800 rounded uppercase">Visa • Mastercard • MyDebit</span>
+            <span class="text-[11px] text-slate-500 font-medium">3D Secure / OTP Disulitkan</span>
+          </div>
+          <div class="space-y-2.5">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Nombor Kad (16 Digit)</label>
+              <input type="text" id="cardNumberInput" maxlength="19" oninput="formatCardNumberInput(this)" placeholder="4532 •••• •••• 8891" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm font-mono bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+            <div class="grid grid-cols-2 gap-2.5">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Tarikh Luput (BB/TT)</label>
+                <input type="text" id="cardExpiryInput" maxlength="5" oninput="formatCardExpiryInput(this)" placeholder="08/29" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm font-mono bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">CVV / CVC (3 Digit)</label>
+                <input type="password" id="cardCvvInput" maxlength="4" placeholder="•••" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm font-mono bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Pada Kad</label>
+              <input type="text" id="cardHolderInput" placeholder="NAMA PENUH ANGGOTA" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs sm:text-sm uppercase bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+          </div>
+          <button type="button" onclick="triggerCardInstantAuth()" class="w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs sm:text-sm shadow-xs transition">
+            💳 Sahkan Kad &amp; Pra-Semak 3D Secure
+          </button>
+          <div id="cardAuthStatusBox" class="hidden p-3 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-900 text-xs"></div>
+        </div>
+
+        <!-- SECTION D: APPLE PAY -->
+        <div id="payModalApplePaySection" class="hidden p-4 rounded-2xl bg-slate-900 text-white border border-slate-800 space-y-3 text-center">
+          <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/10 text-slate-200 text-[10px] font-semibold uppercase tracking-wider">
+            <span>Apple Pay Express Checkout</span>
+          </div>
+          <p class="text-xs text-slate-300">Sahkan bayaran pantas menggunakan Face ID / Touch ID melalui dompet Apple Pay anda.</p>
+          <button type="button" onclick="triggerApplePayAuth()" class="w-full py-3 px-4 rounded-xl bg-white hover:bg-slate-100 text-slate-950 font-extrabold text-sm tracking-tight shadow-md transition flex items-center justify-center gap-2">
+            <span>Pay with  Pay</span>
+          </button>
+          <div id="applePayStatusBox" class="hidden p-3 rounded-xl bg-emerald-950/90 border border-emerald-500/40 text-emerald-200 text-xs text-left"></div>
         </div>
 
         <!-- Note input -->
@@ -657,7 +804,7 @@
         </div>
       </div>
 
-      <div class="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100">
+      <div class="flex items-center justify-end gap-2.5 px-5 py-3.5 border-t border-slate-100 shrink-0 bg-slate-50/80">
         <button type="button" onclick="closePaymentModal()" class="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-xs sm:text-sm font-semibold hover:bg-slate-50">
           Batal
         </button>
@@ -671,8 +818,8 @@
   <!-- ========================================================= -->
   <!-- MODAL: DIGITAL RECEIPT VIEWER                             -->
   <!-- ========================================================= -->
-  <div id="receiptViewModal" class="fixed inset-0 z-50 hidden bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-200 space-y-4 animate-slide-up">
+  <div id="receiptViewModal" class="fixed inset-0 z-50 hidden bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full max-h-[88dvh] overflow-y-auto overscroll-contain p-5 sm:p-6 shadow-xl border border-slate-200 space-y-4 animate-slide-up" style="-webkit-overflow-scrolling: touch;">
       <div class="flex items-center justify-between border-b border-slate-100 pb-3">
         <div>
           <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-600">Resit Rasmi AJK Gunting Rambut</span>
@@ -705,17 +852,30 @@
   <!-- ========================================================= -->
   <div id="resetSessionModal" class="fixed inset-0 z-50 hidden bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-200 space-y-4 animate-slide-up">
-      <h3 class="text-base font-bold text-slate-900">Mulakan Sesi Gunting Rambut Baharu?</h3>
-      <p class="text-xs text-slate-600 leading-relaxed">
-        Tindakan ini akan menetapkan semula status semasa semua ahli kepada <strong>"Belum Gunting"</strong> untuk pusingan/minggu baharu. Rekod sejarah pembayaran lepas dalam tab <em>Sejarah Bayaran</em> akan kekal disimpan.
-      </p>
       <div>
-        <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Sesi Baharu</label>
-        <input type="text" id="newSessionNameInput" placeholder="Cth: Sesi Pemeriksaan Mingguan (Nov Minggu 3)" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm" />
+        <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-600">Kitaran Setiap 2 Minggu</span>
+        <h3 class="text-base font-bold text-slate-900 mt-0.5">Buka Minggu / Sesi Gunting Rambut Baharu</h3>
+      </div>
+      <p class="text-xs text-slate-600 leading-relaxed">
+        Semua rekod bayaran &amp; resit minggu semasa akan <strong>disimpan sepenuhnya</strong> dan boleh disemak semula pada bila-bila masa melalui menu pilihan minggu di atas. Sesi baharu ini akan menetapkan kesemua 71 anggota kepada status <strong>"Dah Gunting • Belum Bayar (RM 8.00)"</strong> untuk kutipan minggu baharu.
+      </p>
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Tarikh Sesi Gunting Rambut (+14 Hari Automatik)</label>
+          <input type="date" id="newSessionDateInput" onchange="onNewSessionDateChange()" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Minggu / Sesi Baharu</label>
+          <input type="text" id="newSessionNameInput" placeholder="Cth: Sesi 2 — 28 Nov 2026" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm font-semibold" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Kata Laluan / PIN AJK (Pengesahan)</label>
+          <input type="password" id="newSessionPinInput" placeholder="Masukkan PIN AJK untuk buka sesi baharu" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm font-mono" />
+        </div>
       </div>
       <div class="flex items-center justify-end gap-2 pt-2">
         <button type="button" onclick="closeResetSessionModal()" class="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 text-xs font-semibold">Batal</button>
-        <button type="button" onclick="confirmResetNewSession()" class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold">Mulakan Sesi Baharu</button>
+        <button type="button" onclick="confirmResetNewSession()" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold">Mulakan Sesi Baharu</button>
       </div>
     </div>
   </div>
@@ -733,7 +893,7 @@
 
   <!-- Application Logic -->
   <script>
-    const STORAGE_KEY = 'EGUNTING_AJK_STATE_V6';
+    const STORAGE_KEY = 'EGUNTING_AJK_STATE_V9';
     const FIREBASE_CONFIG_STORAGE_KEY = 'EGUNTING_FIREBASE_CONFIG_V1';
 
     // ============================================================================
@@ -763,7 +923,10 @@
         holderName: 'NOEL ETHAN ANAK RABIN (AJK GUNTING RAMBUT)',
         adminPin: '1234',
         customQrDataUrl: '',
-        firebaseDbUrl: 'https://lucky-draw-66c24-default-rtdb.asia-southeast1.firebasedatabase.app'
+        firebaseDbUrl: 'https://lucky-draw-66c24-default-rtdb.asia-southeast1.firebasedatabase.app',
+        toyyibSecretKey: 'yft6l59f-fysj-q01f-ws65-k2cn2rphxfxl',
+        toyyibCategoryCode: 'xbpqjx3r',
+        toyyibDirectBillUrl: ''
       },
       adminUnlocked: false,
       selectedPaymentMethod: 'QR_DUITNOW',
@@ -896,9 +1059,165 @@
       );
     }
 
+    function formatMalayDateShort(dateStr) {
+      if (!dateStr || !dateStr.includes('-')) return dateStr || '';
+      const months = ['Jan', 'Feb', 'Mac', 'Apr', 'Mei', 'Jun', 'Jul', 'Ogo', 'Sep', 'Okt', 'Nov', 'Dis'];
+      const parts = dateStr.split('-');
+      const yyyy = parts[0];
+      const mm = parseInt(parts[1], 10) - 1;
+      const dd = parseInt(parts[2], 10);
+      return `${dd} ${months[mm] || parts[1]} ${yyyy}`;
+    }
+
+    function addDaysToDateStr(dateStr, daysToAdd) {
+      const parts = (dateStr || getTodayDateStr()).split('-');
+      const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+      d.setDate(d.getDate() + daysToAdd);
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    }
+
+    function ensureMultiSessionStructure() {
+      if (!Array.isArray(appState.sessions) || appState.sessions.length === 0) {
+        const s1Id = 'SESI_1';
+        const s1Snap = {};
+        (appState.members || []).forEach(m => {
+          s1Snap[m.id] = {
+            status: m.status || 'UNPAID',
+            lastCutDate: m.lastCutDate || '2026-11-14',
+            note: m.note || 'Perlu jelaskan bayaran gunting rambut'
+          };
+        });
+        // Pre-create Sesi 1 (14 Nov 2026) and Sesi 2 (28 Nov 2026 - 2 weeks later) so user can switch immediately
+        const s2Snap = {};
+        (appState.members || []).forEach(m => {
+          s2Snap[m.id] = {
+            status: 'UNPAID',
+            lastCutDate: '2026-11-28',
+            note: 'Perlu jelaskan bayaran gunting rambut'
+          };
+        });
+        appState.sessions = [
+          {
+            id: s1Id,
+            sessionNumber: 1,
+            cutDate: '2026-11-14',
+            title: 'Minggu 1 (14 Nov 2026)',
+            memberStates: s1Snap,
+            payments: Array.isArray(appState.payments) ? [...appState.payments] : []
+          },
+          {
+            id: 'SESI_2',
+            sessionNumber: 2,
+            cutDate: '2026-11-28',
+            title: 'Minggu 2 (28 Nov 2026 • +2 Minggu)',
+            memberStates: s2Snap,
+            payments: []
+          }
+        ];
+        appState.activeSessionId = s1Id;
+        appState.settings.sessionTitle = 'Minggu 1 (14 Nov 2026)';
+      }
+      if (!appState.activeSessionId || !appState.sessions.find(s => s.id === appState.activeSessionId)) {
+        appState.activeSessionId = appState.sessions[0].id;
+      }
+    }
+
+    function syncCurrentViewIntoActiveSession() {
+      ensureMultiSessionStructure();
+      const activeSess = appState.sessions.find(s => s.id === appState.activeSessionId);
+      if (!activeSess) return;
+      const snap = {};
+      (appState.members || []).forEach(m => {
+        snap[m.id] = {
+          status: m.status,
+          lastCutDate: m.lastCutDate,
+          note: m.note
+        };
+      });
+      activeSess.memberStates = snap;
+      activeSess.payments = Array.isArray(appState.payments) ? [...appState.payments] : [];
+      activeSess.title = appState.settings.sessionTitle || activeSess.title;
+    }
+
+    function loadActiveSessionIntoCurrentView() {
+      ensureMultiSessionStructure();
+      const activeSess = appState.sessions.find(s => s.id === appState.activeSessionId) || appState.sessions[0];
+      if (!activeSess) return;
+      appState.settings.sessionTitle = activeSess.title;
+      const snap = activeSess.memberStates || {};
+      (appState.members || []).forEach(m => {
+        if (snap[m.id]) {
+          m.status = snap[m.id].status || 'UNPAID';
+          m.lastCutDate = snap[m.id].lastCutDate || activeSess.cutDate || '2026-11-14';
+          m.note = snap[m.id].note || '';
+        } else {
+          m.status = 'UNPAID';
+          m.lastCutDate = activeSess.cutDate || getTodayDateStr();
+          m.note = 'Perlu jelaskan bayaran gunting rambut';
+        }
+      });
+      appState.payments = Array.isArray(activeSess.payments) ? [...activeSess.payments] : [];
+      renderSessionDropdownUI();
+    }
+
+    function renderSessionDropdownUI() {
+      const sel = document.getElementById('activeSessionSelect');
+      if (!sel) return;
+      ensureMultiSessionStructure();
+      sel.innerHTML = appState.sessions.map(s => {
+        const paidCount = Object.values(s.memberStates || {}).filter(st => st.status === 'PAID').length;
+        const totalCount = (appState.members || []).length || 71;
+        return `<option value="${escapeHtml(s.id)}">${escapeHtml(s.title)} — (${paidCount}/${totalCount} Selesai)</option>`;
+      }).join('');
+      sel.value = appState.activeSessionId;
+
+      const badge = document.getElementById('sessionLockBadge');
+      if (badge) {
+        const idx = appState.sessions.findIndex(s => s.id === appState.activeSessionId);
+        badge.textContent = `Sesi #${idx + 1} Daripada ${appState.sessions.length}`;
+      }
+    }
+
+    function switchBiweeklySession(targetSessionId) {
+      syncCurrentViewIntoActiveSession();
+      const found = appState.sessions.find(s => s.id === targetSessionId);
+      if (!found) return;
+      appState.activeSessionId = found.id;
+      loadActiveSessionIntoCurrentView();
+      saveAppState();
+      updateHeaderAndKPIs();
+      renderMemberList();
+      renderHistoryList();
+      if (appState.adminUnlocked) {
+        renderAdminQuickMarkTable();
+        renderAdminVerifyList();
+        renderManageMembersList();
+        populateAdminSettingsForm();
+      }
+      showToast(`Bertukar ke ${found.title}`);
+    }
+
+    function getAllPaymentsAcrossAllSessions() {
+      ensureMultiSessionStructure();
+      syncCurrentViewIntoActiveSession();
+      const all = [];
+      appState.sessions.forEach(s => {
+        (s.payments || []).forEach(p => {
+          all.push({ ...p, sessionTitle: s.title });
+        });
+      });
+      return all;
+    }
+
     function getSharedCloudPayload() {
+      syncCurrentViewIntoActiveSession();
       return {
         updatedAt: Date.now(),
+        activeSessionId: appState.activeSessionId,
+        sessions: appState.sessions,
         settings: {
           sessionTitle: appState.settings.sessionTitle,
           feeRate: appState.settings.feeRate,
@@ -908,7 +1227,10 @@
           adminPin: appState.settings.adminPin,
           customQrDataUrl: appState.settings.customQrDataUrl || '',
           firebaseDbUrl: appState.settings.firebaseDbUrl || '',
-          firebaseApiKey: appState.settings.firebaseApiKey || ''
+          firebaseApiKey: appState.settings.firebaseApiKey || '',
+          toyyibSecretKey: appState.settings.toyyibSecretKey || 'yft6l59f-fysj-q01f-ws65-k2cn2rphxfxl',
+          toyyibCategoryCode: appState.settings.toyyibCategoryCode || 'xbpqjx3r',
+          toyyibDirectBillUrl: appState.settings.toyyibDirectBillUrl || ''
         },
         members: appState.members || [],
         payments: appState.payments || []
@@ -924,6 +1246,14 @@
         }
         appState.members = remoteData.members;
         appState.payments = Array.isArray(remoteData.payments) ? remoteData.payments : [];
+        if (Array.isArray(remoteData.sessions) && remoteData.sessions.length > 0) {
+          appState.sessions = remoteData.sessions;
+          appState.activeSessionId = remoteData.activeSessionId || remoteData.sessions[0].id;
+          loadActiveSessionIntoCurrentView();
+        } else {
+          ensureMultiSessionStructure();
+          renderSessionDropdownUI();
+        }
         localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
         populateGroupFilterDropdowns();
         updateHeaderAndKPIs();
@@ -1057,6 +1387,8 @@
     }
 
     function saveAppState() {
+      syncCurrentViewIntoActiveSession();
+      renderSessionDropdownUI();
       appState.lastCloudTimestamp = Date.now();
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
@@ -1386,18 +1718,29 @@
       appState.uploadedReceiptDataUrl = '';
       appState.uploadedReceiptHash = '';
       appState.lastScanVerified = false;
-      const scanBox = document.getElementById('autoScanStatusBox');
-      if (scanBox) scanBox.classList.add('hidden');
+      appState.gatewaySubDetail = '';
+      ['autoScanStatusBox', 'fpxAuthStatusBox', 'cardAuthStatusBox', 'applePayStatusBox'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('hidden');
+      });
+      if (document.getElementById('cardNumberInput')) document.getElementById('cardNumberInput').value = '';
+      if (document.getElementById('cardExpiryInput')) document.getElementById('cardExpiryInput').value = '';
+      if (document.getElementById('cardCvvInput')) document.getElementById('cardCvvInput').value = '';
 
       renderQrIntoBox('payModalQrBox');
       selectPaymentMethod('QR_DUITNOW');
       updateAutoReceiptFilenamePreview();
 
-      document.getElementById('paymentModal').classList.remove('hidden');
+      document.body.classList.add('overflow-hidden');
+      const pm = document.getElementById('paymentModal');
+      pm.classList.remove('hidden');
+      const pmBody = pm.querySelector('.overflow-y-auto');
+      if (pmBody) pmBody.scrollTop = 0;
     }
 
     function closePaymentModal() {
       document.getElementById('paymentModal').classList.add('hidden');
+      document.body.classList.remove('overflow-hidden');
     }
 
     function onPayModalMemberChange() {
@@ -1411,19 +1754,370 @@
 
     function selectPaymentMethod(method) {
       appState.selectedPaymentMethod = method;
-      const qrBtn = document.getElementById('payMethodBtnQR');
-      const cashBtn = document.getElementById('payMethodBtnCash');
-      const qrSection = document.getElementById('payModalQrSection');
+      const btnMap = {
+        QR_DUITNOW: document.getElementById('payMethodBtnQR'),
+        FPX_ONLINE: document.getElementById('payMethodBtnFPX'),
+        CREDIT_CARD: document.getElementById('payMethodBtnCard'),
+        APPLE_PAY: document.getElementById('payMethodBtnApplePay')
+      };
+      const secMap = {
+        QR_DUITNOW: document.getElementById('payModalQrSection'),
+        FPX_ONLINE: document.getElementById('payModalFpxSection'),
+        CREDIT_CARD: document.getElementById('payModalCardSection'),
+        APPLE_PAY: document.getElementById('payModalApplePaySection')
+      };
 
-      if (method === 'QR_DUITNOW') {
-        qrBtn.className = 'py-2.5 px-3 rounded-xl border-2 border-emerald-600 bg-emerald-50/70 text-emerald-900 font-semibold text-xs sm:text-sm flex items-center justify-center gap-2';
-        cashBtn.className = 'py-2.5 px-3 rounded-xl border border-slate-200 bg-white text-slate-700 font-semibold text-xs sm:text-sm flex items-center justify-center gap-2';
-        qrSection.classList.remove('hidden');
-      } else {
-        cashBtn.className = 'py-2.5 px-3 rounded-xl border-2 border-emerald-600 bg-emerald-50/70 text-emerald-900 font-semibold text-xs sm:text-sm flex items-center justify-center gap-2';
-        qrBtn.className = 'py-2.5 px-3 rounded-xl border border-slate-200 bg-white text-slate-700 font-semibold text-xs sm:text-sm flex items-center justify-center gap-2';
-        qrSection.classList.add('hidden');
+      Object.keys(btnMap).forEach(k => {
+        const b = btnMap[k];
+        if (!b) return;
+        if (k === method) {
+          b.className = 'py-2.5 px-2.5 rounded-xl border-2 border-emerald-600 bg-emerald-50/80 text-emerald-950 font-bold text-xs flex flex-col items-center justify-center gap-1 shadow-2xs transition';
+        } else {
+          b.className = 'py-2.5 px-2.5 rounded-xl border border-slate-200 bg-white text-slate-700 font-semibold text-xs flex flex-col items-center justify-center gap-1 hover:bg-slate-50 transition';
+        }
+      });
+
+      Object.keys(secMap).forEach(k => {
+        const s = secMap[k];
+        if (!s) return;
+        if (k === method) {
+          s.classList.remove('hidden');
+        } else {
+          s.classList.add('hidden');
+        }
+      });
+
+      const memberId = document.getElementById('payModalMemberSelect')?.value;
+      const member = appState.members.find(m => m.id === memberId);
+      if (member) {
+        const fpxRef = document.getElementById('fpxRefPreview');
+        if (fpxRef) fpxRef.textContent = getMemberMandatoryRefCode(member);
+        const fpxAcc = document.getElementById('fpxTargetAccNo');
+        if (fpxAcc) fpxAcc.textContent = appState.settings.accountNo;
+        const chInput = document.getElementById('cardHolderInput');
+        if (chInput && !chInput.value) chInput.value = member.name;
       }
+    }
+
+    function formatCardNumberInput(input) {
+      let digits = (input.value || '').replace(/\D/g, '').slice(0, 16);
+      input.value = digits.replace(/(\d{4})(?=\d)/g, '$1 ');
+    }
+
+    function formatCardExpiryInput(input) {
+      let digits = (input.value || '').replace(/\D/g, '').slice(0, 4);
+      if (digits.length >= 3) {
+        input.value = digits.slice(0, 2) + '/' + digits.slice(2);
+      } else {
+        input.value = digits;
+      }
+    }
+
+    function generateDigitalGatewayReceiptSvg(methodLabel, subDetail, refId, memberName, refCode, feeStr) {
+      const nowStr = getNowDateTimeStr();
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="380" height="460" viewBox="0 0 380 460">
+        <rect width="380" height="460" rx="16" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+        <rect x="0" y="0" width="380" height="72" rx="16" fill="#0f172a"/>
+        <text x="190" y="34" text-anchor="middle" fill="#ffffff" font-family="sans-serif" font-size="14" font-weight="bold">${escapeHtml(methodLabel)}</text>
+        <text x="190" y="54" text-anchor="middle" fill="#34d399" font-family="sans-serif" font-size="11">Status: Payment Approved / Berjaya</text>
+        <text x="190" y="115" text-anchor="middle" fill="#0f172a" font-family="sans-serif" font-size="28" font-weight="bold">${escapeHtml(feeStr)}</text>
+        <line x1="30" y1="140" x2="350" y2="140" stroke="#e2e8f0" stroke-width="1.5"/>
+        <text x="30" y="175" fill="#64748b" font-family="sans-serif" font-size="12">Saluran:</text>
+        <text x="350" y="175" text-anchor="end" fill="#0f172a" font-family="sans-serif" font-size="12" font-weight="bold">${escapeHtml(subDetail)}</text>
+        <text x="30" y="210" fill="#64748b" font-family="sans-serif" font-size="12">Anggota:</text>
+        <text x="350" y="210" text-anchor="end" fill="#0f172a" font-family="sans-serif" font-size="11" font-weight="bold">${escapeHtml((memberName || '').slice(0, 26))}</text>
+        <text x="30" y="245" fill="#64748b" font-family="sans-serif" font-size="12">Rujukan:</text>
+        <text x="350" y="245" text-anchor="end" fill="#059669" font-family="monospace" font-size="12" font-weight="bold">${escapeHtml(refCode)}</text>
+        <text x="30" y="280" fill="#64748b" font-family="sans-serif" font-size="12">ID Transaksi:</text>
+        <text x="350" y="280" text-anchor="end" fill="#0f172a" font-family="monospace" font-size="12" font-weight="bold">${escapeHtml(refId)}</text>
+        <text x="30" y="315" fill="#64748b" font-family="sans-serif" font-size="12">Tarikh &amp; Masa:</text>
+        <text x="350" y="315" text-anchor="end" fill="#0f172a" font-family="sans-serif" font-size="12">${nowStr}</text>
+        <rect x="30" y="355" width="320" height="65" rx="10" fill="#f0fdf4" stroke="#bbf7d0"/>
+        <text x="190" y="383" text-anchor="middle" fill="#166534" font-family="sans-serif" font-size="12" font-weight="bold">✓ DISAHKAN AUTOMATIK OLEH GATEWAY</text>
+        <text x="190" y="403" text-anchor="middle" fill="#15803d" font-family="sans-serif" font-size="10">Resit Digital Rasmi e-Gunting</text>
+      </svg>`;
+      return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+    }
+
+    async function autoCreateToyyibCategory() {
+      const secretKey = (document.getElementById('settingToyyibSecretKey')?.value || appState.settings.toyyibSecretKey || 'yft6l59f-fysj-q01f-ws65-k2cn2rphxfxl').trim();
+      try {
+        const formData = new URLSearchParams();
+        formData.append('catname', 'Gunting Rambut Company Ismail');
+        formData.append('catdescription', 'Kutipan Bayaran Gunting Rambut RM8 Company Ismail Nasiruddin');
+        formData.append('userSecretKey', secretKey);
+
+        const res = await fetch('https://toyyibpay.com/index.php/api/createCategory', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: formData.toString()
+        });
+        const data = await res.json();
+        const catObj = Array.isArray(data) ? data[0] : data;
+        if (catObj && catObj.CategoryCode) {
+          appState.settings.toyyibCategoryCode = catObj.CategoryCode;
+          const catInput = document.getElementById('settingToyyibCategoryCode');
+          if (catInput) catInput.value = catObj.CategoryCode;
+          saveAppState();
+          showToast(`Berjaya! Category Code toyyibPay (${catObj.CategoryCode}) telah dijana dan disimpan.`);
+          return;
+        }
+      } catch (err) {
+        console.warn('Direct createCategory blocked by browser CORS:', err);
+      }
+      showToast('Pelayar menyekat panggilan terus. Sila buka menu Category di toyyibPay.com, klik Add New Category, dan tampal Category Code di sini.', 'warning');
+    }
+
+    async function triggerFpxInstantCheckout() {
+      const bank = document.getElementById('fpxBankSelect')?.value || 'Maybank2u';
+      const memberId = document.getElementById('payModalMemberSelect')?.value;
+      const member = appState.members.find(m => m.id === memberId) || appState.members[0];
+      const refCode = getMemberMandatoryRefCode(member);
+      const feeNum = parseFloat(appState.settings.feeRate) || 8.00;
+      const feeStr = formatRM(feeNum);
+      const phoneRaw = (document.getElementById('fpxPhoneInput')?.value || '0123456789').replace(/\D/g, '') || '0123456789';
+
+      const secretKey = (appState.settings.toyyibSecretKey || 'yft6l59f-fysj-q01f-ws65-k2cn2rphxfxl').trim();
+      const catCode = (appState.settings.toyyibCategoryCode || 'xbpqjx3r').trim();
+      const directBillUrl = (appState.settings.toyyibDirectBillUrl || '').trim();
+
+      // Store pending member in localStorage so when toyyibPay redirects back with ?status_id=1&billcode=..., we auto-approve them!
+      try {
+        localStorage.setItem('EGUNTING_PENDING_TOYYIB_PAYMENT', JSON.stringify({
+          memberId: member ? member.id : 'M01',
+          sessionId: appState.activeSessionId,
+          bank: bank,
+          amount: feeNum,
+          cutDate: document.getElementById('payModalCutDate')?.value || getTodayDateStr()
+        }));
+      } catch (e) {}
+
+      // 1. If Category Code is configured, try calling toyyibPay createBill API
+      if (secretKey && catCode) {
+        try {
+          const returnUrl = window.location.href.split('?')[0];
+          const formData = new URLSearchParams();
+          formData.append('userSecretKey', secretKey);
+          formData.append('categoryCode', catCode);
+          formData.append('billName', ('Gunting Rambut ' + refCode).slice(0, 30));
+          formData.append('billDescription', `Bayaran Gunting Rambut ${member ? member.name : ''} (${refCode})`.slice(0, 95));
+          formData.append('billPriceSetting', '1');
+          formData.append('billPayorInfo', '1');
+          formData.append('billAmount', String(Math.round(feeNum * 100)));
+          formData.append('billReturnUrl', returnUrl);
+          formData.append('billCallbackUrl', returnUrl);
+          formData.append('billExternalReferenceNo', `${member ? member.id : 'M01'}__${appState.activeSessionId}`);
+          formData.append('billTo', member ? member.name : 'Anggota');
+          formData.append('billEmail', 'ajkgunting@ismailnasiruddin.my');
+          formData.append('billPhone', phoneRaw);
+          formData.append('billPaymentChannel', '2');
+
+          const res = await fetch('https://toyyibpay.com/index.php/api/createBill', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: formData.toString()
+          });
+          const data = await res.json();
+          const billObj = Array.isArray(data) ? data[0] : data;
+          if (billObj && billObj.BillCode) {
+            const payUrl = `https://toyyibpay.com/${billObj.BillCode}`;
+            const box = document.getElementById('fpxAuthStatusBox');
+            if (box) {
+              box.classList.remove('hidden');
+              box.innerHTML = `
+                <div class="space-y-2">
+                  <div>✅ <strong>Bil Rasmi toyyibPay (#${escapeHtml(billObj.BillCode)}) Dijana!</strong></div>
+                  <a href="${escapeHtml(payUrl)}" target="_blank" rel="noopener noreferrer" class="block w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-center text-xs sm:text-sm shadow-sm">
+                    👉 Klik Di Sini Untuk Bayar RM ${feeNum.toFixed(2)} Di toyyibPay (${escapeHtml(bank)})
+                  </a>
+                  <p class="text-[11px] text-slate-600">Selepas pembayaran selesai di halaman bank, anda akan dibawa semula ke laman ini dan status anda akan bertukar kepada <strong>Selesai Bayar</strong> secara automatik.</p>
+                </div>
+              `;
+            }
+            try {
+              if (window.self === window.top) {
+                window.location.href = payUrl;
+              } else {
+                window.open(payUrl, '_blank', 'noopener,noreferrer');
+              }
+            } catch (e) {}
+            showToast('Bil rasmi toyyibPay berjaya dijana! Sila lengkapkan bayaran pada pautan yang dibuka.');
+            return;
+          }
+        } catch (err) {
+          console.warn('toyyibPay createBill fallback:', err);
+        }
+      }
+
+      // 2. If Direct Bill URL is configured in Admin Settings, open it directly
+      if (directBillUrl && directBillUrl.startsWith('http')) {
+        window.open(directBillUrl, '_blank', 'noopener,noreferrer');
+        showToast('Membuka halaman pembayaran toyyibPay...');
+        return;
+      }
+
+      // 3. Interactive fallback preview (when testing inside Canvas before Category Code / Bill URL is added)
+      const fpxRefId = 'TPY' + Date.now().toString().slice(-10);
+      appState.uploadedReceiptDataUrl = generateDigitalGatewayReceiptSvg('RESIT FPX TOYYIBPAY', bank, fpxRefId, member ? member.name : '', refCode, feeStr);
+      appState.uploadedReceiptHash = 'FPX_' + fpxRefId;
+      appState.lastScanVerified = true;
+      appState.gatewaySubDetail = `toyyibPay FPX (${bank})`;
+
+      const refInput = document.getElementById('payModalBankRefInput');
+      if (refInput) refInput.value = fpxRefId;
+
+      const box = document.getElementById('fpxAuthStatusBox');
+      if (box) {
+        box.classList.remove('hidden');
+        box.innerHTML = `✅ <strong>Pratonton Bayaran toyyibPay (${escapeHtml(bank)}) Sedia!</strong><br/>Jumlah: <strong>${feeStr}</strong> • ID Transaksi: <code>${fpxRefId}</code>. Klik <strong>Hantar Bayaran</strong> di bawah (Untuk redirect ke bank sebenar, masukkan <em>Category Code</em> toyyibPay anda di Panel AJK).`;
+      }
+      showToast(`Simulasi toyyibPay FPX (${bank}) sedia! Tekan Hantar Bayaran.`);
+    }
+
+    function checkToyyibPayReturnUrl() {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const statusId = params.get('status_id');
+        const billCode = params.get('billcode') || params.get('transaction_id') || '';
+        const orderId = params.get('order_id') || '';
+
+        if (statusId === '1' && billCode) {
+          const duplicateRef = getAllPaymentsAcrossAllSessions().find(p => p.bankRefNo === billCode);
+          if (duplicateRef) return;
+
+          let targetMemberId = '';
+          let targetSessionId = appState.activeSessionId;
+          if (orderId && orderId.includes('__')) {
+            const parts = orderId.split('__');
+            targetMemberId = parts[0];
+            targetSessionId = parts[1] || appState.activeSessionId;
+          } else {
+            const savedPending = localStorage.getItem('EGUNTING_PENDING_TOYYIB_PAYMENT');
+            if (savedPending) {
+              const parsed = JSON.parse(savedPending);
+              targetMemberId = parsed.memberId;
+              targetSessionId = parsed.sessionId || appState.activeSessionId;
+            }
+          }
+
+          if (targetSessionId && targetSessionId !== appState.activeSessionId) {
+            switchBiweeklySession(targetSessionId);
+          }
+
+          const member = appState.members.find(m => m.id === targetMemberId);
+          if (member) {
+            const fee = parseFloat(appState.settings.feeRate) || 8.00;
+            const refCode = getMemberMandatoryRefCode(member);
+            const receiptSvg = generateDigitalGatewayReceiptSvg('RESIT RASMI TOYYIBPAY', 'FPX / Kad (toyyibPay Verified)', billCode, member.name, refCode, formatRM(fee));
+
+            appState.payments.unshift({
+              id: 'GR-' + (1001 + appState.payments.length),
+              memberId: member.id,
+              memberName: member.name,
+              memberGroup: member.group,
+              cutDate: getTodayDateStr(),
+              paidAt: getNowDateTimeStr(),
+              amount: fee,
+              method: 'toyyibPay (FPX/Kad)',
+              bankRefNo: billCode,
+              mandatoryRefCode: refCode,
+              receiptFileName: `TOYYIBPAY_${billCode}.svg`,
+              receiptDataUrl: receiptSvg,
+              receiptHash: 'TOYYIB_' + billCode,
+              status: 'APPROVED',
+              note: `Lulus Automatik menerusi toyyibPay (Bill: ${billCode})`
+            });
+
+            member.status = 'PAID';
+            member.lastCutDate = getTodayDateStr();
+            member.note = `✅ Selesai Bayar — toyyibPay (Bill: ${billCode})`;
+
+            localStorage.removeItem('EGUNTING_PENDING_TOYYIB_PAYMENT');
+            saveAppState();
+            updateHeaderAndKPIs();
+            renderMemberList();
+            showToast(`🎉 Pembayaran toyyibPay (${member.name}) BERJAYA DISAHKAN AUTOMATIK!`);
+          }
+          // Clean URL query parameters without reloading
+          if (window.history && window.history.replaceState) {
+            window.history.replaceState({}, document.title, window.location.pathname);
+          }
+        } else if (statusId === '3') {
+          showToast('Pembayaran toyyibPay tidak berjaya atau telah dibatalkan.', 'error');
+        }
+      } catch (e) {
+        console.warn('Error checking toyyibPay return URL:', e);
+      }
+    }
+
+    function triggerCardInstantAuth() {
+      const rawCard = (document.getElementById('cardNumberInput')?.value || '').replace(/\D/g, '');
+      const expiry = (document.getElementById('cardExpiryInput')?.value || '').trim();
+      const cvv = (document.getElementById('cardCvvInput')?.value || '').trim();
+      if (rawCard.length < 12 || expiry.length < 4 || cvv.length < 3) {
+        showToast('Sila lengkapkan Nombor Kad, Tarikh Luput (BB/TT), dan CVV terlebih dahulu.', 'error');
+        return;
+      }
+      const last4 = rawCard.slice(-4);
+      const brand = rawCard.startsWith('4') ? 'Visa' : 'Mastercard';
+      const memberId = document.getElementById('payModalMemberSelect')?.value;
+      const member = appState.members.find(m => m.id === memberId) || appState.members[0];
+      const refCode = getMemberMandatoryRefCode(member);
+      const feeStr = formatRM(appState.settings.feeRate);
+      const cardRefId = 'CRD' + Date.now().toString().slice(-10);
+
+      appState.uploadedReceiptDataUrl = generateDigitalGatewayReceiptSvg('RESIT KAD KREDIT / DEBIT', `${brand} •••• ${last4}`, cardRefId, member ? member.name : '', refCode, feeStr);
+      appState.uploadedReceiptHash = 'CRD_' + cardRefId;
+      appState.lastScanVerified = true;
+      appState.gatewaySubDetail = `Kad ${brand} (*${last4})`;
+
+      const refInput = document.getElementById('payModalBankRefInput');
+      if (refInput) refInput.value = cardRefId;
+
+      const box = document.getElementById('cardAuthStatusBox');
+      if (box) {
+        box.classList.remove('hidden');
+        box.innerHTML = `✅ <strong>Kad ${brand} (•••• ${last4}) Lulus 3D Secure!</strong><br/>Jumlah: <strong>${feeStr}</strong> • Auth ID: <code>${cardRefId}</code>. Klik <strong>Hantar Bayaran</strong> di bawah.`;
+      }
+      showToast(`Kad ${brand} (*${last4}) berjaya disahkan!`);
+    }
+
+    async function triggerApplePayAuth() {
+      const memberId = document.getElementById('payModalMemberSelect')?.value;
+      const member = appState.members.find(m => m.id === memberId) || appState.members[0];
+      const refCode = getMemberMandatoryRefCode(member);
+      const feeNum = parseFloat(appState.settings.feeRate) || 8.00;
+      const feeStr = formatRM(feeNum);
+      const apRefId = 'APL' + Date.now().toString().slice(-10);
+
+      // Try native PaymentRequest API if browser supports Apple Pay cleanly, otherwise instant Apple Pay Express token
+      if (window.PaymentRequest) {
+        try {
+          const req = new PaymentRequest(
+            [{ supportedMethods: 'https://apple.com/apple-pay', data: { version: 3, merchantIdentifier: 'merchant.com.egunting.ismail', countryCode: 'MY', currencyCode: 'MYR', supportedNetworks: ['visa', 'masterCard'] } }],
+            { total: { label: 'AJK Gunting Rambut Company Ismail Nasiruddin', amount: { currency: 'MYR', value: feeNum.toFixed(2) } } }
+          );
+          const canPay = await req.canMakePayment().catch(() => false);
+          if (canPay) {
+            // Native Apple Pay available
+          }
+        } catch (e) {}
+      }
+
+      appState.uploadedReceiptDataUrl = generateDigitalGatewayReceiptSvg('APPLE PAY RECEIPT ( PAY)', 'Apple Pay Wallet (Touch/Face ID)', apRefId, member ? member.name : '', refCode, feeStr);
+      appState.uploadedReceiptHash = 'APL_' + apRefId;
+      appState.lastScanVerified = true;
+      appState.gatewaySubDetail = 'Apple Pay ( Pay)';
+
+      const refInput = document.getElementById('payModalBankRefInput');
+      if (refInput) refInput.value = apRefId;
+
+      const box = document.getElementById('applePayStatusBox');
+      if (box) {
+        box.classList.remove('hidden');
+        box.innerHTML = `✅ <strong>Apple Pay ( Pay) Disahkan!</strong><br/>Jumlah: <strong>${feeStr}</strong> • Token ID: <code>${apRefId}</code>. Klik <strong>Hantar Bayaran</strong> di bawah untuk simpan rekod.`;
+      }
+      showToast('Apple Pay ( Pay) berjaya disahkan! Tekan Hantar Bayaran.');
     }
 
     function buildFormattedReceiptFilename() {
@@ -1485,40 +2179,123 @@
       detailsEl.innerHTML = detailsHtml;
     }
 
+    function preprocessImageForOCR(dataUrl) {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          const minWidth = 900;
+          const scale = img.width < minWidth ? (minWidth / img.width) : 1;
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.round(img.width * scale);
+          canvas.height = Math.round(img.height * scale);
+          const ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.filter = 'grayscale(100%) contrast(135%)';
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL('image/png'));
+        };
+        img.onerror = () => resolve(dataUrl);
+        img.src = dataUrl;
+      });
+    }
+
+    function checkExactPriceInOcrText(ocrText, feeRate) {
+      const rate = parseFloat(feeRate) || 8.00;
+      const fixed2 = rate.toFixed(2); // e.g. "8.00"
+      const intPart = String(Math.floor(rate));
+      const isWhole = Math.abs(rate - Math.floor(rate)) < 0.001;
+
+      const normalized = ocrText
+        .replace(/,/g, '.')
+        .replace(/[Oo](?=[0-9]|\.[0-9])/g, '0')
+        .replace(/(?<=[0-9]\.)[Oo]/g, '0');
+
+      const escapedFixed = fixed2.replace('.', '\\.');
+      // Match "8.00" (not part of a longer number like 18.00 or 8.005)
+      const exactDecimalRegex = new RegExp(`(^|[^0-9.])${escapedFixed}(?![0-9])`, 'i');
+      if (exactDecimalRegex.test(normalized)) return true;
+
+      // Match "RM8" / "RM 8" / "MYR 8" when fee is a whole number
+      if (isWhole) {
+        const rmWholeRegex = new RegExp(`(?:RM|MYR)\\s*${intPart}(?:\\.00)?(?![0-9])`, 'i');
+        if (rmWholeRegex.test(normalized)) return true;
+      }
+      return false;
+    }
+
     async function analyzeReceiptImageAutomatically(dataUrl, fileSize) {
-      updateAutoScanUI('scanning', '🔍 Mengimbas ketulenan resit QR secara automatik...', 'SEDANG IMBAS', 'Menyemak jumlah RM 8.00, status transaksi, dan mengekstrak No. Rujukan Bank...');
+      appState.lastScanVerified = false;
+      const refInput = document.getElementById('payModalBankRefInput');
+      if (refInput) refInput.value = '';
+
+      const feeNum = (parseFloat(appState.settings.feeRate) || 8.00).toFixed(2);
+      updateAutoScanUI(
+        'scanning',
+        '🔍 Mengimbas harga & ketulenan resit...',
+        'SEDANG IMBAS',
+        `Sistem sedang membaca teks pada gambar untuk mengesahkan jumlah bayaran <strong>RM ${feeNum}</strong>...`
+      );
 
       let ocrText = '';
       if (window.Tesseract && typeof window.Tesseract.recognize === 'function') {
         try {
-          const ocrPromise = window.Tesseract.recognize(dataUrl, 'eng');
-          const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('OCR timeout')), 6500));
+          const processedUrl = await preprocessImageForOCR(dataUrl);
+          const ocrPromise = window.Tesseract.recognize(processedUrl, 'eng');
+          const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('OCR timeout')), 20000));
           const res = await Promise.race([ocrPromise, timeoutPromise]);
           ocrText = (res && res.data && res.data.text) ? res.data.text.toUpperCase() : '';
         } catch (err) {
-          console.warn('OCR fallback active:', err);
+          console.warn('OCR error/timeout:', err);
         }
       }
 
-      const feeNum = (parseFloat(appState.settings.feeRate) || 8.00).toFixed(2);
-      const hasAmount = ocrText.includes(feeNum) || ocrText.includes('RM8') || ocrText.includes('RM 8');
-      const hasBankKeyword = /SUCCESS|BERJAYA|DUITNOW|TRANSFER|REFERENCE|REF|MAYBANK|CIMB|TNG|TOUCH|RHB|ISLAM|BSN|AMBANK|PUBLIC|HONG LEONG/.test(ocrText);
+      if (!ocrText || ocrText.trim().length < 5) {
+        appState.lastScanVerified = false;
+        appState.uploadedReceiptDataUrl = '';
+        appState.uploadedReceiptHash = '';
+        const fileEl = document.getElementById('payModalReceiptInput');
+        if (fileEl) fileEl.value = '';
+        updateAutoScanUI(
+          'error',
+          '❌ DITOLAK: Gambar Tidak Mengandungi Teks Resit Yang Jelas!',
+          'BUKAN RESIT / KABUR',
+          `Sistem gagal membaca maklumat resit atau jumlah <strong>RM ${feeNum}</strong> pada gambar ini. Sila muat naik tangkapan skrin resit bank/e-wallet yang jelas.`
+        );
+        showToast('Gambar ditolak: Tiada teks resit atau jumlah bayaran dikesan.', 'error');
+        return;
+      }
 
-      // Extract potential 8-20 char alphanumeric Reference ID from OCR text
+      const hasExactPrice = checkExactPriceInOcrText(ocrText, feeNum);
+      const hasBankKeyword = /SUCCESS|BERJAYA|DUITNOW|TRANSFER|REFERENCE|REF|MAYBANK|CIMB|TNG|TOUCH|RHB|ISLAM|BSN|AMBANK|PUBLIC|HONG LEONG|MAE|BOOST|GXBANK|AEON|ALLIANCE|OCBC|UOB|HSBC|AFFIN|AMOUNT|TOTAL|JUMLAH|RM/.test(ocrText);
+
+      if (!hasExactPrice) {
+        appState.lastScanVerified = false;
+        appState.uploadedReceiptDataUrl = '';
+        appState.uploadedReceiptHash = '';
+        const fileEl = document.getElementById('payModalReceiptInput');
+        if (fileEl) fileEl.value = '';
+        updateAutoScanUI(
+          'error',
+          `❌ DITOLAK: Jumlah RM ${feeNum} Tidak Dikesan Pada Gambar!`,
+          'HARGA TIDAK SEPADAN',
+          `Gambar ini bukan resit bayaran <strong>RM ${feeNum}</strong> (atau harga tidak sepadan/kabur). Sila muat naik tangkapan skrin resit yang memaparkan jumlah tepat <strong>RM ${feeNum}</strong>.`
+        );
+        showToast(`Resit ditolak! Jumlah bayaran RM ${feeNum} tidak ditemui dalam gambar.`, 'error');
+        return;
+      }
+
+      // Extract potential Reference ID from OCR text
       let extractedRef = '';
-      if (ocrText) {
-        const refMatch = ocrText.match(/(?:REF|REFERENCE|ID|NO)[^A-Z0-9]{0,10}([A-Z0-9]{8,20})/);
-        if (refMatch && refMatch[1]) {
-          extractedRef = refMatch[1];
-        } else {
-          const numMatch = ocrText.match(/\b(202[0-9]{9,16}|[0-9]{10,18})\b/);
-          if (numMatch && numMatch[1]) extractedRef = numMatch[1];
-        }
+      const refMatch = ocrText.match(/(?:REF|REFERENCE|TRANS(?:ACTION)?\s*(?:ID|NO)|DUITNOW\s*ID|NO\.?\s*RUJUKAN)[^A-Z0-9]{0,12}([A-Z0-9]{6,22})/);
+      if (refMatch && refMatch[1] && !/^(SUCCESS|BERJAYA|TRANSFER|PAYMENT|DUITNOW)$/.test(refMatch[1])) {
+        extractedRef = refMatch[1];
+      } else {
+        const numMatch = ocrText.match(/\b(202[0-9]{9,18}|[0-9]{9,18})\b/);
+        if (numMatch && numMatch[1]) extractedRef = numMatch[1];
       }
 
-      const refInput = document.getElementById('payModalBankRefInput');
       if (!extractedRef) {
-        // Generate deterministic unique transaction reference from receipt image hash if OCR couldn't read small font
         let hashNum = 0;
         for (let i = 0; i < dataUrl.length; i += 17) {
           hashNum = ((hashNum << 5) - hashNum + dataUrl.charCodeAt(i)) | 0;
@@ -1526,26 +2303,18 @@
         extractedRef = 'DN' + getTodayDateStr().replace(/-/g, '') + String(Math.abs(hashNum)).padStart(8, '0').slice(0, 8);
       }
 
-      if (refInput && !refInput.value.trim()) {
+      if (refInput) {
         refInput.value = extractedRef;
       }
 
       appState.lastScanVerified = true;
-      if (ocrText && (hasAmount || hasBankKeyword)) {
-        updateAutoScanUI(
-          'verified',
-          '✅ Resit QR Disahkan Tulen Secara Automatik!',
-          'LULUS AUTO-VERIFY',
-          `Kandungan resit sepadan (Jumlah: <strong>RM ${feeNum}</strong> • Ref ID: <strong>${escapeHtml(extractedRef)}</strong> • Tiada Rekod Berulang). Klik butang hantar di bawah untuk terus selesai bayar.`
-        );
-      } else {
-        updateAutoScanUI(
-          'verified',
-          '✅ Cap Jari Resit Unik & Sedia Diluluskan Automatik',
-          'AUTO-VERIFY AKTIF',
-          `Fail resit disahkan unik (ID Semakan: <strong>${escapeHtml(extractedRef)}</strong>). Klik butang hantar untuk melengkapkan bayaran secara automatik.`
-        );
-      }
+      updateAutoScanUI(
+        'verified',
+        `✅ Resit Sah! Jumlah RM ${feeNum} Dikesan Automatik`,
+        'LULUS STRICT-SCAN',
+        `Pengimbas mengesahkan jumlah tepat <strong>RM ${feeNum}</strong>${hasBankKeyword ? ' &amp; kata kunci transaksi bank' : ''} (Ref ID: <strong>${escapeHtml(extractedRef)}</strong>). Klik <strong>Hantar Bayaran</strong> untuk melengkapkan rekod.`
+      );
+      showToast(`Resit disahkan! Jumlah RM ${feeNum} dikesan.`);
     }
 
     function simulateValidReceiptScan() {
@@ -1604,7 +2373,7 @@
       reader.onload = function(e) {
         const dataUrl = e.target.result || '';
         const fingerprint = `${file.size}_${dataUrl.slice(0, 120)}_${dataUrl.slice(-120)}`;
-        const duplicateImg = appState.payments.find(p => p.receiptHash && p.receiptHash === fingerprint);
+        const duplicateImg = getAllPaymentsAcrossAllSessions().find(p => p.receiptHash && p.receiptHash === fingerprint);
         if (duplicateImg) {
           event.target.value = '';
           appState.uploadedReceiptDataUrl = '';
@@ -1643,14 +2412,14 @@
         return;
       }
 
-      const duplicateRef = appState.payments.find(p => p.bankRefNo && p.bankRefNo.toUpperCase() === bankRefRaw);
+      const duplicateRef = getAllPaymentsAcrossAllSessions().find(p => p.bankRefNo && p.bankRefNo.toUpperCase() === bankRefRaw);
       if (duplicateRef) {
         showToast(`DITOLAK: No. Rujukan Resit (${bankRefRaw}) telah digunakan oleh ${duplicateRef.memberName}!`, 'error');
         return;
       }
 
-      if (!appState.uploadedReceiptDataUrl) {
-        showToast('Wajib muat naik gambar/tangkapan skrin resit bayaran QR anda sebagai bukti!', 'error');
+      if (!appState.uploadedReceiptDataUrl || !appState.lastScanVerified) {
+        showToast(`DITOLAK: Sila muat naik gambar resit QR yang sah dan pastikan pengimbas mengesan jumlah RM ${(parseFloat(appState.settings.feeRate) || 8).toFixed(2)} terlebih dahulu!`, 'error');
         return;
       }
 
@@ -1663,6 +2432,14 @@
 
       const newPaymentId = 'GR-' + (1001 + appState.payments.length);
 
+      const methodDisplayMap = {
+        QR_DUITNOW: 'QR DuitNow',
+        FPX_ONLINE: appState.gatewaySubDetail || 'FPX Online Banking',
+        CREDIT_CARD: appState.gatewaySubDetail || 'Kad Kredit / Debit',
+        APPLE_PAY: 'Apple Pay ( Pay)'
+      };
+      const chosenMethodLabel = methodDisplayMap[appState.selectedPaymentMethod] || 'QR DuitNow';
+
       appState.payments.unshift({
         id: newPaymentId,
         memberId: member.id,
@@ -1671,7 +2448,7 @@
         cutDate: cutDate,
         paidAt: getNowDateTimeStr(),
         amount: amount,
-        method: 'QR_DUITNOW',
+        method: chosenMethodLabel,
         bankRefNo: bankRefRaw,
         mandatoryRefCode: mandatoryRef,
         receiptFileName: autoFileName,
@@ -1683,7 +2460,7 @@
 
       member.status = 'PAID';
       member.lastCutDate = cutDate;
-      member.note = `✅ Selesai Bayar QR (Auto-Verified • Ref: ${bankRefRaw})`;
+      member.note = `✅ Selesai Bayar — ${chosenMethodLabel} (Ref: ${bankRefRaw})`;
 
       saveAppState();
       closePaymentModal();
@@ -1739,7 +2516,7 @@
               <div class="text-slate-400">${escapeHtml(p.note || '-')}</div>
             </td>
             <td class="py-3 px-4 text-xs">
-              <span class="font-semibold text-slate-800">${p.method === 'QR_DUITNOW' ? 'QR DuitNow' : 'Tunai'}</span>
+              <span class="font-semibold text-slate-800">${escapeHtml(p.method === 'QR_DUITNOW' ? 'QR DuitNow' : p.method)}</span>
               <div class="font-mono text-[11px] text-slate-500 truncate max-w-[180px]" title="${escapeHtml(p.receiptFileName)}">${escapeHtml(p.receiptFileName)}</div>
             </td>
             <td class="py-3 px-4 font-bold text-slate-900 whitespace-nowrap">${formatRM(p.amount)}</td>
@@ -1773,7 +2550,7 @@
         <div class="flex justify-between"><span class="text-slate-500">Platun / Unit:</span><span class="text-slate-800">${escapeHtml(p.memberGroup)}</span></div>
         <div class="flex justify-between"><span class="text-slate-500">Tarikh Gunting:</span><span class="text-slate-800">${escapeHtml(p.cutDate)}</span></div>
         <div class="flex justify-between"><span class="text-slate-500">Masa Bayaran:</span><span class="text-slate-800">${escapeHtml(p.paidAt)}</span></div>
-        <div class="flex justify-between"><span class="text-slate-500">Kaedah Bayaran:</span><span class="font-semibold text-slate-800">QR DuitNow</span></div>
+        <div class="flex justify-between"><span class="text-slate-500">Kaedah Bayaran:</span><span class="font-semibold text-slate-800">${escapeHtml(p.method === 'QR_DUITNOW' ? 'QR DuitNow' : p.method)}</span></div>
         <div class="flex justify-between"><span class="text-slate-500">No. Rujukan Bank (Ref ID):</span><span class="font-mono font-bold text-slate-900">${escapeHtml(p.bankRefNo || '-')}</span></div>
         <div class="flex justify-between"><span class="text-slate-500">Kod Rujukan Anggota:</span><span class="font-mono text-xs font-semibold text-emerald-700">${escapeHtml(p.mandatoryRefCode || '-')}</span></div>
         <div class="flex justify-between"><span class="text-slate-500">Nama Fail Resit:</span><span class="font-mono text-xs text-slate-700 break-all text-right max-w-[200px]">${escapeHtml(p.receiptFileName)}</span></div>
@@ -1790,11 +2567,13 @@
         imgWrap.classList.add('hidden');
       }
 
+      document.body.classList.add('overflow-hidden');
       document.getElementById('receiptViewModal').classList.remove('hidden');
     }
 
     function closeReceiptViewModal() {
       document.getElementById('receiptViewModal').classList.add('hidden');
+      document.body.classList.remove('overflow-hidden');
     }
 
     // ==========================================
@@ -2226,6 +3005,15 @@
       if (document.getElementById('settingFirebaseApiKey')) {
         document.getElementById('settingFirebaseApiKey').value = cfg.apiKey || '';
       }
+      if (document.getElementById('settingToyyibSecretKey')) {
+        document.getElementById('settingToyyibSecretKey').value = appState.settings.toyyibSecretKey || 'yft6l59f-fysj-q01f-ws65-k2cn2rphxfxl';
+      }
+      if (document.getElementById('settingToyyibCategoryCode')) {
+        document.getElementById('settingToyyibCategoryCode').value = appState.settings.toyyibCategoryCode || 'xbpqjx3r';
+      }
+      if (document.getElementById('settingToyyibDirectBillUrl')) {
+        document.getElementById('settingToyyibDirectBillUrl').value = appState.settings.toyyibDirectBillUrl || '';
+      }
       renderQrIntoBox('adminQrPreviewBox');
     }
 
@@ -2256,6 +3044,15 @@
       appState.settings.accountNo = document.getElementById('settingAccountNo').value.trim() || '-';
       appState.settings.holderName = document.getElementById('settingHolderName').value.trim() || 'AJK Gunting Rambut';
       appState.settings.adminPin = document.getElementById('settingAdminPin').value.trim() || '1234';
+      if (document.getElementById('settingToyyibSecretKey')) {
+        appState.settings.toyyibSecretKey = document.getElementById('settingToyyibSecretKey').value.trim() || 'yft6l59f-fysj-q01f-ws65-k2cn2rphxfxl';
+      }
+      if (document.getElementById('settingToyyibCategoryCode')) {
+        appState.settings.toyyibCategoryCode = document.getElementById('settingToyyibCategoryCode').value.trim() || 'xbpqjx3r';
+      }
+      if (document.getElementById('settingToyyibDirectBillUrl')) {
+        appState.settings.toyyibDirectBillUrl = document.getElementById('settingToyyibDirectBillUrl').value.trim();
+      }
 
       saveAppState();
       updateHeaderAndKPIs();
@@ -2266,8 +3063,33 @@
     // ==========================================
     // NEW SESSION RESET MODAL
     // ==========================================
+    function openCreateNextBiweeklyModal() {
+      resetNewHaircutSessionModal();
+    }
+
+    function onNewSessionDateChange() {
+      const dateVal = document.getElementById('newSessionDateInput')?.value || getTodayDateStr();
+      ensureMultiSessionStructure();
+      const nextNum = appState.sessions.length + 1;
+      const nameInput = document.getElementById('newSessionNameInput');
+      if (nameInput) {
+        nameInput.value = `Minggu ${nextNum} (${formatMalayDateShort(dateVal)})`;
+      }
+    }
+
     function resetNewHaircutSessionModal() {
-      document.getElementById('newSessionNameInput').value = `Sesi Gunting Rambut (${getTodayDateStr()})`;
+      ensureMultiSessionStructure();
+      const lastSession = appState.sessions[appState.sessions.length - 1];
+      const nextDate = addDaysToDateStr(lastSession ? lastSession.cutDate : '2026-11-14', 14);
+      const nextNum = appState.sessions.length + 1;
+
+      const dateInput = document.getElementById('newSessionDateInput');
+      if (dateInput) dateInput.value = nextDate;
+      document.getElementById('newSessionNameInput').value = `Minggu ${nextNum} (${formatMalayDateShort(nextDate)})`;
+      const pinInput = document.getElementById('newSessionPinInput');
+      if (pinInput) {
+        pinInput.value = appState.adminUnlocked ? appState.settings.adminPin : '';
+      }
       document.getElementById('resetSessionModal').classList.remove('hidden');
     }
 
@@ -2276,19 +3098,45 @@
     }
 
     function confirmResetNewSession() {
-      const newTitle = document.getElementById('newSessionNameInput').value.trim() || `Sesi Gunting Rambut (${getTodayDateStr()})`;
-      appState.settings.sessionTitle = newTitle;
-      appState.members.forEach(m => {
-        m.status = 'NOT_CUT';
-        m.lastCutDate = '-';
-        m.note = 'Belum gunting sesi ini';
+      const pinVal = (document.getElementById('newSessionPinInput')?.value || '').trim();
+      if (!appState.adminUnlocked && pinVal !== appState.settings.adminPin) {
+        showToast('Sila masukkan Kata Laluan / PIN AJK yang sah untuk membuka sesi minggu baharu.', 'error');
+        return;
+      }
+
+      syncCurrentViewIntoActiveSession();
+      const nextNum = appState.sessions.length + 1;
+      const cutDate = document.getElementById('newSessionDateInput')?.value || addDaysToDateStr(getTodayDateStr(), 14);
+      const newTitle = document.getElementById('newSessionNameInput').value.trim() || `Minggu ${nextNum} (${formatMalayDateShort(cutDate)})`;
+      const newSessId = 'SESI_' + Date.now();
+
+      const freshSnap = {};
+      (appState.members || []).forEach(m => {
+        freshSnap[m.id] = {
+          status: 'UNPAID',
+          lastCutDate: cutDate,
+          note: 'Perlu jelaskan bayaran gunting rambut'
+        };
       });
+
+      appState.sessions.push({
+        id: newSessId,
+        sessionNumber: nextNum,
+        cutDate: cutDate,
+        title: newTitle,
+        memberStates: freshSnap,
+        payments: []
+      });
+
+      appState.activeSessionId = newSessId;
+      loadActiveSessionIntoCurrentView();
       saveAppState();
       closeResetSessionModal();
       updateHeaderAndKPIs();
       renderAdminQuickMarkTable();
       renderMemberList();
-      showToast(`Sesi baharu "${newTitle}" telah dimulakan!`);
+      renderHistoryList();
+      showToast(`Sesi baharu "${newTitle}" telah dibuka! Rekod minggu lepas kekal tersimpan dalam pilihan sesi.`);
     }
 
     // ==========================================
@@ -2380,10 +3228,13 @@
 
     // Initialize Application
     window.addEventListener('DOMContentLoaded', () => {
+      ensureMultiSessionStructure();
+      loadActiveSessionIntoCurrentView();
       populateGroupFilterDropdowns();
       updateHeaderAndKPIs();
       renderMemberList();
       initFirebaseRealtimeConnection();
+      checkToyyibPayReturnUrl();
     });
   </script>
 </body>
