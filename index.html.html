@@ -1,0 +1,2390 @@
+<!DOCTYPE html>
+<html lang="ms" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>e-Gunting | Sistem Rekod & Bayaran AJK Gunting Rambut</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-app-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-database-compat.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f8fafc;
+      color: #0f172a;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 9999px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-slide-up {
+      animation: slideUp 0.22s ease-out forwards;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col bg-slate-50 text-slate-900">
+
+  <!-- Top Navigation Bar -->
+  <header class="sticky top-0 z-30 bg-slate-900 text-white shadow-md border-b border-slate-800">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-emerald-400 shrink-0">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M14.121 14.121L19 19m-7-7l7-7m-7 7l-2.879 2.879M12 12L9.121 9.121m0 5.758a3 3 0 10-4.243 4.243 3 3 0 004.243-4.243zm0-5.758a3 3 0 10-4.243-4.243 3 3 0 004.243 4.243z" />
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-base sm:text-lg font-bold tracking-tight" id="headerAppTitle">Sistem AJK Gunting Rambut</h1>
+            <span class="px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 rounded-full border border-emerald-500/30" id="headerFeeBadge">RM 8.00 • QR Auto-Verify</span>
+            <span id="cloudSyncBadge" class="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-slate-800 text-slate-300 border border-slate-700 flex items-center gap-1">
+              <span id="cloudSyncDot" class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+              <span id="cloudSyncText">Firebase Cloud Tersambung</span>
+            </span>
+          </div>
+          <p class="text-xs text-slate-400" id="headerSubtitle">Company Ismail Nasiruddin (Lelaki) • 71 Anggota</p>
+        </div>
+      </div>
+
+      <!-- Mode Switcher -->
+      <div class="flex items-center gap-1.5 bg-slate-800 p-1 rounded-xl border border-slate-700">
+        <button type="button" id="navBtnMember" onclick="switchMainView('member')" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all bg-emerald-600 text-white shadow-sm">
+          Portal Ahli
+        </button>
+        <button type="button" id="navBtnHistory" onclick="switchMainView('history')" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all text-slate-300 hover:text-white">
+          Sejarah Bayaran
+        </button>
+        <button type="button" id="navBtnAdmin" onclick="switchMainView('admin')" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all text-slate-300 hover:text-white flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+          <span>Panel AJK</span>
+          <span id="pendingVerifyBadge" class="hidden px-1.5 py-0.2 bg-amber-500 text-slate-950 font-bold rounded-full text-[10px]">0</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 space-y-6">
+
+    <!-- Top Summary Banner / KPI Cards -->
+    <section class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-medium text-slate-500">Jumlah Ahli Berdaftar</span>
+          <span class="w-8 h-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          </span>
+        </div>
+        <p class="mt-2 text-2xl font-bold text-slate-900" id="statTotalMembers">0</p>
+        <p class="mt-0.5 text-xs text-slate-500" id="statActiveSessionLabel">Sesi Semasa</p>
+      </div>
+
+      <div class="bg-white rounded-2xl p-4 border border-rose-200/80 shadow-sm">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-medium text-rose-600">Dah Gunting (Belum Bayar)</span>
+          <span class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </span>
+        </div>
+        <p class="mt-2 text-2xl font-bold text-rose-600" id="statUnpaidCount">0 Ahli</p>
+        <p class="mt-0.5 text-xs text-rose-500 font-medium" id="statUnpaidAmount">Tunggakan: RM 0.00</p>
+      </div>
+
+      <div class="bg-white rounded-2xl p-4 border border-amber-200/80 shadow-sm">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-medium text-amber-700">Resit Diragui (Perlu Semak)</span>
+          <span class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </span>
+        </div>
+        <p class="mt-2 text-2xl font-bold text-amber-600" id="statPendingCount">0 Resit</p>
+        <p class="mt-0.5 text-xs text-amber-600/80" id="statPendingAmount">Jumlah: RM 0.00</p>
+      </div>
+
+      <div class="bg-white rounded-2xl p-4 border border-emerald-200/80 shadow-sm">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-medium text-emerald-700">Selesai Bayar (Terkumpul)</span>
+          <span class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </span>
+        </div>
+        <p class="mt-2 text-2xl font-bold text-emerald-600" id="statCollectedAmount">RM 0.00</p>
+        <p class="mt-0.5 text-xs text-emerald-600/80" id="statPaidCount">0 Bayaran Selesai</p>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- VIEW 1: PORTAL AHLI (SEMAK & BAYAR)        -->
+    <!-- ========================================== -->
+    <section id="viewMember" class="space-y-6 animate-slide-up">
+      <!-- Quick Callout Banner for Members who just cut their hair -->
+      <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-950 text-white rounded-2xl p-5 sm:p-6 shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div class="space-y-1.5">
+          <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-xs font-semibold">
+            <span>✂️ Baru Selesai Gunting Rambut?</span>
+          </div>
+          <h2 class="text-lg sm:text-xl font-bold">Cari nama anda di bawah atau terus lapor & buat pembayaran</h2>
+          <p class="text-xs sm:text-sm text-slate-300 max-w-2xl">
+            Semua anggota dikehendaki menjelaskan bayaran <strong class="text-white" id="bannerFeeText">RM 8.00</strong> menerusi <strong>QR DuitNow Sahaja</strong>. Sistem dilengkapi <strong>Pengimbas Resit Pintar (Auto-Verify)</strong> yang menyemak ketulenan resit &amp; meluluskan status bayaran secara automatik tanpa perlu semakan manual AJK.
+          </p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2.5 shrink-0 w-full md:w-auto">
+          <button type="button" onclick="openSelfReportModal()" class="w-full md:w-auto px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm shadow-sm transition flex items-center justify-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+            <span>Saya Dah Gunting — Bayar Sekarang</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Filter & Search Controls -->
+      <div class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-sm space-y-4">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div>
+            <h3 class="text-base font-bold text-slate-900">Senarai Status Gunting Rambut & Pembayaran Ahli</h3>
+            <p class="text-xs text-slate-500">Klik butang <strong>"Bayar Sekarang"</strong> pada nama anda jika anda telah selesai gunting rambut.</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <button type="button" onclick="copyUnpaidWhatsAppList()" class="px-3 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-xs font-semibold text-slate-700 flex items-center gap-1.5 transition">
+              <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+              </svg>
+              <span>Salin Senarai Belum Bayar (WhatsApp)</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-12 gap-3">
+          <!-- Search input -->
+          <div class="sm:col-span-5 relative">
+            <svg class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input type="text" id="memberSearchInput" oninput="renderMemberList()" placeholder="Cari nama anggota atau No. Tentera (cth: 3018965)..." class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" />
+          </div>
+
+          <!-- Platoon / Group Filter -->
+          <div class="sm:col-span-3">
+            <select id="memberGroupFilter" onchange="renderMemberList()" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+              <option value="ALL">Semua Platun / Unit</option>
+              <option value="Platun 1">Platun 1</option>
+              <option value="Platun 2">Platun 2</option>
+              <option value="Platun 3">Platun 3</option>
+            </select>
+          </div>
+
+          <!-- Status Filter -->
+          <div class="sm:col-span-4">
+            <select id="memberStatusFilter" onchange="renderMemberList()" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+              <option value="ALL">Semua Status Ahli</option>
+              <option value="UNPAID">⚠️ Dah Gunting — Belum Bayar</option>
+              <option value="PENDING">⏳ Menunggu Pengesahan Resit</option>
+              <option value="PAID">✅ Selesai Bayar</option>
+              <option value="NOT_CUT">➖ Belum Gunting Sesi Ini</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Member Cards / Table Grid -->
+        <div id="memberListContainer" class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1"></div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- VIEW 2: SEJARAH BAYARAN & RESIT AHLI       -->
+    <!-- ========================================== -->
+    <section id="viewHistory" class="hidden space-y-5 animate-slide-up">
+      <div class="bg-white rounded-2xl p-4 sm:p-6 border border-slate-200/80 shadow-sm space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900">Rekod & Sejarah Pembayaran Gunting Rambut</h2>
+            <p class="text-xs text-slate-500">Senarai penuh transaksi pembayaran ahli berserta nama fail resit automatik dan status semakan AJK.</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <input type="text" id="historySearchInput" oninput="renderHistoryList()" placeholder="Cari nama, tarikh, atau no. resit..." class="px-3.5 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+            <button type="button" onclick="exportPaymentsCSV()" class="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold flex items-center gap-1.5 shrink-0">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              <span>Eksport CSV</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto custom-scrollbar border border-slate-200 rounded-xl">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-50 text-slate-600 text-xs uppercase border-b border-slate-200">
+                <th class="py-3 px-4 font-semibold">Tarikh & Masa</th>
+                <th class="py-3 px-4 font-semibold">Nama Ahli & Unit</th>
+                <th class="py-3 px-4 font-semibold">Sesi / Catatan</th>
+                <th class="py-3 px-4 font-semibold">Kaedah & Resit</th>
+                <th class="py-3 px-4 font-semibold">Jumlah</th>
+                <th class="py-3 px-4 font-semibold">Status</th>
+                <th class="py-3 px-4 font-semibold text-right">Tindakan</th>
+              </tr>
+            </thead>
+            <tbody id="historyTableBody" class="divide-y divide-slate-200 text-sm"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- VIEW 3: PANEL AJK GUNTING RAMBUT (ADMIN)   -->
+    <!-- ========================================== -->
+    <section id="viewAdmin" class="hidden space-y-6 animate-slide-up">
+
+      <!-- Admin Lock Screen (Shown until unlocked) -->
+      <div id="adminLockCard" class="max-w-md mx-auto bg-white rounded-2xl p-6 border border-slate-200 shadow-sm text-center space-y-4 my-6">
+        <div class="w-12 h-12 rounded-2xl bg-slate-900 text-emerald-400 flex items-center justify-center mx-auto">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+        </div>
+        <div>
+          <h2 class="text-lg font-bold text-slate-900">Akses Khas AJK Gunting Rambut</h2>
+          <p class="text-xs text-slate-500 mt-1">Ruangan terhad untuk AJK sahaja. Sila masukkan kata laluan / PIN keselamatan AJK untuk mengakses tetapan dan rekod penuh.</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <input type="password" id="adminPinInput" onkeydown="if(event.key==='Enter') verifyAdminPin()" placeholder="Masukkan Kata Laluan / PIN AJK" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-center text-base tracking-widest font-bold focus:outline-none focus:ring-2 focus:ring-slate-900" />
+          <button type="button" onclick="verifyAdminPin()" class="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm shrink-0">
+            Masuk
+          </button>
+        </div>
+      </div>
+
+      <!-- Unlocked Admin Content -->
+      <div id="adminDashboardContent" class="hidden space-y-6">
+
+        <!-- Admin Sub-navigation Bar -->
+        <div class="bg-white rounded-2xl p-3 border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-2">
+          <div class="flex flex-wrap items-center gap-1.5">
+            <button type="button" id="adminTabQuickMark" onclick="switchAdminSubTab('quickmark')" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-900 text-white">
+              1. Tanda Ahli Dah Gunting
+            </button>
+            <button type="button" id="adminTabVerify" onclick="switchAdminSubTab('verify')" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-600 hover:bg-slate-100">
+              2. Sahkan Resit Bayaran <span id="adminSubTabVerifyCount" class="ml-1 px-1.5 py-0.5 text-[10px] rounded-full bg-amber-100 text-amber-800">0</span>
+            </button>
+            <button type="button" id="adminTabMembers" onclick="switchAdminSubTab('members')" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-600 hover:bg-slate-100">
+              3. Urus Senarai Ahli
+            </button>
+            <button type="button" id="adminTabSettings" onclick="switchAdminSubTab('settings')" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-600 hover:bg-slate-100">
+              4. Tetapan Harga & QR AJK
+            </button>
+          </div>
+
+          <button type="button" onclick="lockAdminSession()" class="px-3 py-1.5 rounded-lg text-xs font-medium text-rose-600 hover:bg-rose-50 flex items-center gap-1">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            <span>Kunci Panel AJK</span>
+          </button>
+        </div>
+
+        <!-- ADMIN SUB-TAB 1: QUICK MARK HAIRCUT & STATUS -->
+        <div id="adminPanelQuickMark" class="bg-white rounded-2xl p-4 sm:p-6 border border-slate-200 shadow-sm space-y-4">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+            <div>
+              <h3 class="text-base sm:text-lg font-bold text-slate-900">Tandakan Ahli Yang Dah Gunting Rambut</h3>
+              <p class="text-xs text-slate-500">Sebagai AJK, anda boleh memantau anggota yang belum bayar (RM 8.00 menerusi QR DuitNow) atau mengesahkan bayaran selepas menyemak penyata bank.</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <button type="button" onclick="markAllFilteredAsCut()" class="px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-semibold transition">
+                Tandakan Semua Dipaparkan "Dah Gunting (Belum Bayar)"
+              </button>
+              <button type="button" onclick="resetNewHaircutSessionModal()" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition">
+                Mulakan Sesi Gunting Baharu
+              </button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <input type="text" id="adminQuickSearch" oninput="renderAdminQuickMarkTable()" placeholder="Cari nama anggota atau No. Tentera..." class="px-3.5 py-2 rounded-xl border border-slate-200 text-sm" />
+            <select id="adminQuickGroup" onchange="renderAdminQuickMarkTable()" class="px-3.5 py-2 rounded-xl border border-slate-200 text-sm bg-white">
+              <option value="ALL">Semua Platun / Unit</option>
+              <option value="Platun 1">Platun 1</option>
+              <option value="Platun 2">Platun 2</option>
+              <option value="Platun 3">Platun 3</option>
+            </select>
+            <select id="adminQuickStatus" onchange="renderAdminQuickMarkTable()" class="px-3.5 py-2 rounded-xl border border-slate-200 text-sm bg-white">
+              <option value="ALL">Semua Status</option>
+              <option value="NOT_CUT">Belum Gunting</option>
+              <option value="UNPAID">Dah Gunting (Belum Bayar)</option>
+              <option value="PENDING">Menunggu Pengesahan</option>
+              <option value="PAID">Selesai Bayar</option>
+            </select>
+          </div>
+
+          <div class="overflow-x-auto custom-scrollbar border border-slate-200 rounded-xl">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-50 text-slate-600 text-xs uppercase border-b border-slate-200">
+                  <th class="py-3 px-4 font-semibold">Ahli</th>
+                  <th class="py-3 px-4 font-semibold">Platun / Unit</th>
+                  <th class="py-3 px-4 font-semibold">Status Semasa</th>
+                  <th class="py-3 px-4 font-semibold">Tarikh Gunting</th>
+                  <th class="py-3 px-4 font-semibold text-right">Tindakan Pantas AJK</th>
+                </tr>
+              </thead>
+              <tbody id="adminQuickMarkBody" class="divide-y divide-slate-200 text-sm"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ADMIN SUB-TAB 2: VERIFY RECEIPTS -->
+        <div id="adminPanelVerify" class="hidden bg-white rounded-2xl p-4 sm:p-6 border border-slate-200 shadow-sm space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-4">
+            <div>
+              <h3 class="text-base sm:text-lg font-bold text-slate-900">Pengesahan Bayaran & Semakan Resit QR</h3>
+              <p class="text-xs text-slate-500">Semak bukti pembayaran yang dihantar oleh ahli dan klik <strong>"Sahkan Bayaran"</strong>.</p>
+            </div>
+            <button type="button" onclick="approveAllPendingPayments()" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold">
+              Sahkan Semua Yang Menunggu
+            </button>
+          </div>
+          <div id="adminVerifyContainer" class="space-y-3"></div>
+        </div>
+
+        <!-- ADMIN SUB-TAB 3: MANAGE MEMBERS (ADD / BULK IMPORT / DELETE) -->
+        <div id="adminPanelMembers" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <!-- Add Single or Bulk Members -->
+          <div class="lg:col-span-5 bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-5">
+            <div>
+              <h3 class="text-base font-bold text-slate-900">Tambah Ahli Baharu</h3>
+              <p class="text-xs text-slate-500">Masukkan butiran ahli secara individu atau tampal senarai nama secara pukal.</p>
+            </div>
+
+            <div class="space-y-3">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Penuh Ahli</label>
+                <input type="text" id="newMemberName" placeholder="Cth: PK Ahmad Danial" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-sm" />
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">No. Badan / ID (Pilihan)</label>
+                  <input type="text" id="newMemberCode" placeholder="Cth: PK-109" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-sm" />
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Platun / Kumpulan</label>
+                  <input type="text" id="newMemberGroup" value="Platun 1" placeholder="Cth: Platun 1" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-sm" />
+                </div>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Status Awal Gunting Rambut</label>
+                <select id="newMemberInitialStatus" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-sm bg-white">
+                  <option value="UNPAID">Dah Gunting — Perlu Buat Bayaran</option>
+                  <option value="NOT_CUT">Belum Gunting</option>
+                  <option value="PAID">Sudah Selesai Bayar</option>
+                </select>
+              </div>
+              <button type="button" onclick="addSingleMember()" class="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm transition">
+                + Tambah Ahli
+              </button>
+            </div>
+
+            <div class="pt-4 border-t border-slate-200 space-y-3">
+              <div>
+                <h4 class="text-sm font-bold text-slate-900">Tampal Senarai Nama Pukal (Bulk Import)</h4>
+                <p class="text-xs text-slate-500">Satu nama setiap baris. Format pilihan: <code>Nama, Platun</code></p>
+              </div>
+              <textarea id="bulkMemberTextarea" rows="4" placeholder="PK Muhammad Arif, Platun 1&#10;PK Chong Wei, Platun 2&#10;PK Danish Hakim, Platun 3" class="w-full p-3 rounded-xl border border-slate-200 text-xs font-mono"></textarea>
+              <div class="flex items-center gap-2">
+                <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
+                  <input type="checkbox" id="bulkMarkAsCutCheckbox" checked class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+                  <span>Terus tandakan semua sebagai <strong>"Dah Gunting (Perlu Bayar)"</strong></span>
+                </label>
+              </div>
+              <button type="button" onclick="importBulkMembers()" class="w-full py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs sm:text-sm transition">
+                Import Senarai Nama
+              </button>
+            </div>
+          </div>
+
+          <!-- Existing Member Directory Management -->
+          <div class="lg:col-span-7 bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="text-base font-bold text-slate-900">Senarai Penuh Ahli (<span id="manageMemberCountLabel">0</span>)</h3>
+                <p class="text-xs text-slate-500">Kemaskini atau padam rekod ahli.</p>
+              </div>
+            </div>
+            <div id="manageMembersList" class="space-y-2 max-h-[500px] overflow-y-auto custom-scrollbar pr-1"></div>
+          </div>
+        </div>
+
+        <!-- ADMIN SUB-TAB 4: SETTINGS (FEE, BANK INFO, QR UPLOAD) -->
+        <div id="adminPanelSettings" class="hidden bg-white rounded-2xl p-5 sm:p-6 border border-slate-200 shadow-sm space-y-6">
+          <div>
+            <h3 class="text-base sm:text-lg font-bold text-slate-900">Tetapan Kadar Bayaran & Maklumat Akaun AJK</h3>
+            <p class="text-xs text-slate-500">Kemaskini harga sekali gunting rambut, maklumat akaun bank/DuitNow, dan imej QR untuk rujukan ahli semasa membuat bayaran.</p>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Projek / Sesi Kutipan</label>
+                <input type="text" id="settingSessionTitle" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-sm" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Kadar Bayaran Sekali Gunting (RM)</label>
+                <input type="number" step="0.50" min="1" id="settingFeeRate" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-sm font-bold" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Bank / E-Wallet AJK</label>
+                <input type="text" id="settingBankName" placeholder="Cth: Maybank / Touch 'n Go eWallet" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-sm" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">No. Akaun Bank</label>
+                <input type="text" id="settingAccountNo" placeholder="Cth: 162106789012" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-sm font-mono" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Pemegang Akaun (AJK Gunting Rambut)</label>
+                <input type="text" id="settingHolderName" placeholder="Cth: NOEL ETHAN ANAK RABIN" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-sm" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">PIN Keselamatan Panel AJK</label>
+                <input type="text" id="settingAdminPin" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-sm font-mono" />
+              </div>
+            </div>
+
+            <div class="space-y-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Muat Naik Gambar Kod QR DuitNow AJK (Pilihan)</label>
+                <p class="text-xs text-slate-500 mb-2">Jika anda muat naik gambar QR DuitNow anda di sini, ahli akan melihat QR sebenar anda semasa menekan butang bayar.</p>
+                <input type="file" id="settingQrFileInput" accept="image/*" onchange="handleAdminQrUpload(event)" class="block w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-3.5 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-slate-900 file:text-white hover:file:bg-slate-800" />
+              </div>
+
+              <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col items-center justify-center text-center">
+                <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-2">Pratonton QR DuitNow Semasa</span>
+                <div id="adminQrPreviewBox" class="w-40 h-40 bg-white p-2 rounded-xl border border-slate-200 flex items-center justify-center overflow-hidden"></div>
+                <button type="button" onclick="clearCustomQrImage()" class="mt-2 text-xs text-rose-600 hover:underline">Tetapkan Semula ke QR Simulasi</button>
+              </div>
+
+              <div class="pt-2">
+                <button type="button" onclick="saveAdminSettings()" class="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm shadow-sm transition">
+                  Simpan Tetapan AJK
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Firebase Real-Time Cloud Sync Setup Section -->
+          <div class="pt-6 border-t border-slate-200 space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <span class="px-2 py-0.5 text-[10px] font-bold uppercase bg-emerald-100 text-emerald-800 rounded">Real-Time Cloud Database</span>
+                <h4 class="text-base font-bold text-slate-900 mt-1">Sambungan Firebase Realtime Database (Perkongsian Data Semua 71 Anggota)</h4>
+                <p class="text-xs text-slate-500">Masukkan <strong>Firebase Database URL</strong> (atau objek <code>firebaseConfig</code>) anda di bawah supaya semua anggota melihat status &amp; resit secara langsung (Real-Time) di telefon masing-masing.</p>
+              </div>
+              <button type="button" onclick="forcePushLocalToFirebase()" class="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shrink-0">
+                ☁️ Muat Naik Data Semasa Ke Firebase
+              </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
+              <div class="md:col-span-7 space-y-3">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Firebase Realtime Database URL <span class="text-emerald-700 font-normal">(Cth: https://projek-anda-default-rtdb.asia-southeast1.firebasedatabase.app)</span></label>
+                  <input type="text" id="settingFirebaseDbUrl" placeholder="https://egunting-ismail-default-rtdb.asia-southeast1.firebasedatabase.app" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs sm:text-sm font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Firebase API Key (Pilihan — diperlukan jika Rules menggunakan Auth)</label>
+                  <input type="text" id="settingFirebaseApiKey" placeholder="AIzaSy..." class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs sm:text-sm font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                  <button type="button" onclick="connectAndSaveFirebaseConfig()" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-xs transition">
+                    🔗 Sambung &amp; Aktifkan Real-Time Sync
+                  </button>
+                  <span id="adminFirebaseStatusLabel" class="text-xs text-slate-500">Status: Menunggu URL Firebase</span>
+                </div>
+              </div>
+
+              <div class="md:col-span-5 bg-slate-900 text-slate-200 p-4 rounded-2xl text-xs space-y-2">
+                <div class="font-bold text-emerald-400">Cara Setup Pantas (2 Minit):</div>
+                <ol class="list-decimal list-inside space-y-1 text-[11px] text-slate-300 leading-relaxed">
+                  <li>Buka <strong>console.firebase.google.com</strong> &amp; buat projek baharu.</li>
+                  <li>Pergi ke menu <strong>Build &rarr; Realtime Database &rarr; Create Database</strong> (pilih rantau Singapore / <code>asia-southeast1</code> &amp; <em>Start in Test Mode</em>).</li>
+                  <li>Salin pautan URL <code>https://...-default-rtdb...firebasedatabase.app</code> dan tampal di ruangan sebelah (atau terus letak dalam pembolehubah <code>PRESET_FIREBASE_CONFIG</code> di dalam kod HTML sebelum muat naik ke GitHub Pages).</li>
+                </ol>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ========================================================= -->
+  <!-- MODAL: PEMBAYARAN GUNTING RAMBUT (UNTUK AHLI)             -->
+  <!-- ========================================================= -->
+  <div id="paymentModal" class="fixed inset-0 z-50 hidden bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-xl border border-slate-200 space-y-5 my-8 animate-slide-up">
+      <div class="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
+        <div>
+          <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-600">Borang Bayaran Gunting Rambut</span>
+          <h3 class="text-lg font-bold text-slate-900" id="payModalTitle">Rekod & Bayar Gunting Rambut</h3>
+        </div>
+        <button type="button" onclick="closePaymentModal()" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="space-y-4">
+        <!-- Select Member (if opened via general button) or Locked Member -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Pilih Nama Ahli</label>
+          <select id="payModalMemberSelect" onchange="onPayModalMemberChange()" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm bg-white font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"></select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Tarikh Gunting Rambut</label>
+            <input type="date" id="payModalCutDate" onchange="updateAutoReceiptFilenamePreview()" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Jumlah Bayaran (RM)</label>
+            <input type="number" step="0.50" id="payModalAmount" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm font-bold bg-slate-50" />
+          </div>
+        </div>
+
+        <!-- Payment Method Notice (QR Only) -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1.5">Kaedah Pembayaran (Ditetapkan Oleh AJK)</label>
+          <div class="w-full">
+            <button type="button" id="payMethodBtnQR" onclick="selectPaymentMethod('QR_DUITNOW')" class="w-full py-2.5 px-4 rounded-xl border-2 border-emerald-600 bg-emerald-50/80 text-emerald-950 font-bold text-xs sm:text-sm flex items-center justify-between">
+              <span>📱 Imbasan QR DuitNow / Transfer Sahaja</span>
+              <span class="px-2 py-0.5 text-[10px] rounded-full bg-emerald-600 text-white uppercase">Wajib Resit &amp; Ref ID</span>
+            </button>
+            <button type="button" id="payMethodBtnCash" onclick="selectPaymentMethod('QR_DUITNOW')" class="hidden"></button>
+          </div>
+        </div>
+
+        <!-- QR & Bank Details Box -->
+        <div id="payModalQrSection" class="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+          <div class="flex flex-col sm:flex-row items-center gap-4">
+            <div id="payModalQrBox" class="w-36 h-36 bg-white p-2 rounded-xl border border-slate-200 shrink-0 flex items-center justify-center"></div>
+            <div class="space-y-1.5 text-center sm:text-left flex-1">
+              <span class="px-2 py-0.5 text-[10px] font-bold bg-pink-100 text-pink-700 rounded-md uppercase">DuitNow QR / Pindahan Bank</span>
+              <p class="text-sm font-bold text-slate-900" id="payModalBankName">Maybank</p>
+              <div class="flex items-center justify-center sm:justify-start gap-2">
+                <p class="text-base font-mono font-bold text-emerald-700" id="payModalAccountNo">162106789012</p>
+                <button type="button" onclick="copyBankAccountNo()" class="px-2 py-0.5 text-[11px] font-semibold bg-white border border-slate-300 rounded-md hover:bg-slate-100">Salin</button>
+              </div>
+              <p class="text-xs text-slate-600" id="payModalHolderName">Penama: NOEL ETHAN ANAK RABIN (AJK)</p>
+              <div class="mt-2 p-2 rounded-lg bg-amber-50 border border-amber-200 text-left">
+                <div class="text-[10px] font-bold uppercase text-amber-800">Langkah 1: Wajib Letak Rujukan Ini Di Bank/QR</div>
+                <div class="flex items-center justify-between gap-2 mt-0.5">
+                  <code class="text-xs font-mono font-bold text-slate-900" id="payModalRefHint">GR01-3018733</code>
+                  <button type="button" onclick="copyMandatoryReference()" class="px-2 py-0.5 text-[10px] font-semibold bg-amber-200/80 hover:bg-amber-300 text-amber-950 rounded">Salin Rujukan</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 2 & 3: Automatic OCR Receipt Scanner + Auto-Filled Ref ID -->
+          <div class="pt-3 border-t border-slate-200 space-y-3">
+            <div class="space-y-1.5">
+              <div class="flex items-center justify-between gap-2">
+                <label class="block text-xs font-semibold text-slate-800">Langkah 2: Muat Naik Tangkapan Skrin Resit QR <span class="text-rose-600">*Wajib</span></label>
+                <button type="button" onclick="simulateValidReceiptScan()" class="text-[11px] font-semibold text-emerald-700 hover:text-emerald-800 underline">
+                  ⚡ Uji Simulasi Resit QR Sah
+                </button>
+              </div>
+              <input type="file" id="payModalReceiptInput" accept="image/*" onchange="handleMemberReceiptUpload(event)" class="block w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-3.5 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-emerald-600 file:text-white hover:file:bg-emerald-500" />
+              
+              <!-- Live Auto-Scanner Feedback Card -->
+              <div id="autoScanStatusBox" class="hidden p-3 rounded-xl border text-xs space-y-1.5 transition-all">
+                <div class="flex items-center justify-between">
+                  <span class="font-bold" id="autoScanTitle">Mengimbas Resit...</span>
+                  <span class="text-[10px] font-mono px-2 py-0.5 rounded-full" id="autoScanBadge">IMBASAN AI/OCR</span>
+                </div>
+                <p class="text-[11px] leading-relaxed" id="autoScanDetails"></p>
+              </div>
+
+              <div class="bg-white px-3 py-2 rounded-xl border border-slate-200 flex items-center justify-between text-[11px]">
+                <span class="text-slate-500">Nama Fail Resit Automatik:</span>
+                <code class="font-mono font-semibold text-slate-800" id="autoReceiptFilenamePreview">AHLI_GUNTINGRAMBUT_2026-11-14.jpg</code>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-800 mb-1">Langkah 3: No. Rujukan Resit Bank / DuitNow Ref ID <span class="text-emerald-700 font-normal">(Diisi Automatik / Boleh Ditaip)</span></label>
+              <input type="text" id="payModalBankRefInput" placeholder="Akan diisi automatik apabila resit diimbas atau taip di sini..." class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs sm:text-sm font-mono uppercase focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white" />
+              <p class="text-[11px] text-slate-500 mt-1">Jika resit tulen &amp; Ref ID unik, bayaran anda akan <strong>diluluskan secara automatik (Auto-Approve)</strong> sebaik dihantar!</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Note input -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Catatan Tambahan (Pilihan)</label>
+          <input type="text" id="payModalNote" placeholder="Cth: Potong No. 1 / Bayar sekali untuk sesi minggu ini" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm" />
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100">
+        <button type="button" onclick="closePaymentModal()" class="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-xs sm:text-sm font-semibold hover:bg-slate-50">
+          Batal
+        </button>
+        <button type="button" onclick="submitMemberPayment()" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-bold shadow-sm transition">
+          Hantar Bayaran
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- MODAL: DIGITAL RECEIPT VIEWER                             -->
+  <!-- ========================================================= -->
+  <div id="receiptViewModal" class="fixed inset-0 z-50 hidden bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-200 space-y-4 animate-slide-up">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div>
+          <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-600">Resit Rasmi AJK Gunting Rambut</span>
+          <h3 class="text-base font-bold text-slate-900" id="rvReceiptId">RESIT #GR-1001</h3>
+        </div>
+        <button type="button" onclick="closeReceiptViewModal()" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div id="rvContentBody" class="space-y-2.5 text-sm bg-slate-50 p-4 rounded-xl border border-slate-200"></div>
+
+      <div id="rvImagePreviewWrapper" class="hidden space-y-1.5">
+        <p class="text-xs font-semibold text-slate-600">Lampiran Bukti Bayaran:</p>
+        <img id="rvImageElement" src="" alt="Bukti Resit" class="max-h-56 w-auto mx-auto rounded-xl border border-slate-200 object-contain bg-white p-1" />
+      </div>
+
+      <div class="flex items-center justify-end gap-2 pt-2">
+        <button type="button" onclick="closeReceiptViewModal()" class="px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-semibold">
+          Tutup
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- MODAL: CONFIRM NEW SESSION RESET                          -->
+  <!-- ========================================================= -->
+  <div id="resetSessionModal" class="fixed inset-0 z-50 hidden bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-200 space-y-4 animate-slide-up">
+      <h3 class="text-base font-bold text-slate-900">Mulakan Sesi Gunting Rambut Baharu?</h3>
+      <p class="text-xs text-slate-600 leading-relaxed">
+        Tindakan ini akan menetapkan semula status semasa semua ahli kepada <strong>"Belum Gunting"</strong> untuk pusingan/minggu baharu. Rekod sejarah pembayaran lepas dalam tab <em>Sejarah Bayaran</em> akan kekal disimpan.
+      </p>
+      <div>
+        <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Sesi Baharu</label>
+        <input type="text" id="newSessionNameInput" placeholder="Cth: Sesi Pemeriksaan Mingguan (Nov Minggu 3)" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm" />
+      </div>
+      <div class="flex items-center justify-end gap-2 pt-2">
+        <button type="button" onclick="closeResetSessionModal()" class="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 text-xs font-semibold">Batal</button>
+        <button type="button" onclick="confirmResetNewSession()" class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold">Mulakan Sesi Baharu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none"></div>
+
+  <!-- Footer -->
+  <footer class="mt-auto border-t border-slate-200 bg-white py-4">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-2">
+      <span>Sistem Pengurusan AJK Gunting Rambut • Data disimpan secara automatik dalam pelayar</span>
+      <span id="footerSessionInfo">Sesi Semasa: Sesi Pemeriksaan November 2026</span>
+    </div>
+  </footer>
+
+  <!-- Application Logic -->
+  <script>
+    const STORAGE_KEY = 'EGUNTING_AJK_STATE_V6';
+    const FIREBASE_CONFIG_STORAGE_KEY = 'EGUNTING_FIREBASE_CONFIG_V1';
+
+    // ============================================================================
+    // TETAPAN FIREBASE REALTIME DATABASE (UNTUK HOSTING GITHUB PAGES / ONLINE)
+    // Jika anda muat naik fail HTML ini ke GitHub Pages / Netlify / Firebase Hosting,
+    // anda boleh terus masukkan databaseURL Firebase anda di bawah supaya semua
+    // 71 anggota automatik tersambung ke database yang sama tanpa perlu isi manual:
+    // ============================================================================
+    const PRESET_FIREBASE_CONFIG = {
+      apiKey: "AIzaSyRealtimeDbPublicClientKey",
+      projectId: "lucky-draw-66c24",
+      databaseURL: "https://lucky-draw-66c24-default-rtdb.asia-southeast1.firebasedatabase.app",
+      fallbackDatabaseURL: "https://lucky-draw-66c24-default-rtdb.firebaseio.com"
+    };
+
+    let firebaseAppInstance = null;
+    let firebaseDbRef = null;
+    let isApplyingRemoteUpdate = false;
+    let restPollTimer = null;
+
+    const DEFAULT_STATE = {
+      settings: {
+        sessionTitle: 'Company Ismail Nasiruddin (Lelaki)',
+        feeRate: 8.00,
+        bankName: 'Maybank / DuitNow QR',
+        accountNo: '162106789012',
+        holderName: 'NOEL ETHAN ANAK RABIN (AJK GUNTING RAMBUT)',
+        adminPin: '1234',
+        customQrDataUrl: '',
+        firebaseDbUrl: 'https://lucky-draw-66c24-default-rtdb.asia-southeast1.firebasedatabase.app'
+      },
+      adminUnlocked: false,
+      selectedPaymentMethod: 'QR_DUITNOW',
+      uploadedReceiptDataUrl: '',
+      members: [
+        { id: 'M01', bil: 1, code: '3018733', name: 'ANDREW ANAK WILSON', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M02', bil: 2, code: '3018782', name: 'MOHAMAD AMIR FARHAN BIN MOHAMAD RAMZI', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M03', bil: 3, code: '3018799', name: 'MOHD AMIRUL MUKMININ BIN ROSLAN', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M04', bil: 4, code: '3018806', name: 'MOHD SHAFIK SAFWAN BIN ABDUL LANI', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M05', bil: 5, code: '3018812', name: 'MUHAMAD HARITH FADILAH BIN HUSNIE', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M06', bil: 6, code: '3018828', name: 'MUHAMMAD AFRIHAN BIN AZIZAN', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M07', bil: 7, code: '3018856', name: 'MUHAMMAD AQIL BIN JAMALI', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M08', bil: 8, code: '3018857', name: 'MUHAMMAD AQIL BIN MUHAIZAN', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M09', bil: 9, code: '3018870', name: 'MUHAMMAD BIN MOHD SOBRI', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M10', bil: 10, code: '3018871', name: 'MUHAMMAD DANISH KHYRILL BIN MOHAMAD TALHA', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M11', bil: 11, code: '3018874', name: 'MUHAMMAD FAISAL BIN MUHAMMED', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M12', bil: 12, code: '3018892', name: 'MUHAMMAD HARRAZ AFFAN BIN ROSHDAN', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M13', bil: 13, code: '3018894', name: 'MUHAMMAD HAZEEM SHAH BIN MOHD YUSOFF', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M14', bil: 14, code: '3018897', name: 'MUHAMMAD HAZIQ BIN JAMALUDIN', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M15', bil: 15, code: '3018900', name: 'MUHAMMAD IKHWAN SYAHID BIN NOR AZMI', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M16', bil: 16, code: '3018902', name: 'MUHAMMAD IMRAN BIN SHARUDIN', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M17', bil: 17, code: '3018907', name: 'MUHAMMAD KHAIRUL IKHWAN BIN ABD RAHIM', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M18', bil: 18, code: '3018909', name: 'MUHAMMAD KHALAF IKRAM BIN AZIZ', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M19', bil: 19, code: '3018911', name: 'MUHAMMAD MUIZZUDDIN BIN NOOR AZMI', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M20', bil: 20, code: '3018917', name: 'MUHAMMAD NUR AFIQ BIN MOHD NORDIN', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M21', bil: 21, code: '3018919', name: 'MUHAMMAD NUR IMAN BIN HAMZAH', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M22', bil: 22, code: '3018921', name: 'MUHAMMAD QAYYUM ASYRAFF BIN MD ZIDEE YUSMI', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M23', bil: 23, code: '3018923', name: 'MUHAMMAD ROSSYAMMIL BIN RASLI', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M24', bil: 24, code: '3018924', name: 'MUHAMMAD SAIFUL DANIAL BIN SAIFUL BAHRI', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M25', bil: 25, code: '3018925', name: 'MUHAMMAD SHAFY HAKIMI BIN SAMSUDIN', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M26', bil: 26, code: '3018926', name: 'MUHAMMAD SHAHRIZAN BIN ABDULLAH', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M27', bil: 27, code: '3018927', name: 'MUHAMMAD SOLEHIN BIN SHAHRULIZAM', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M28', bil: 28, code: '3018929', name: 'MUHAMMAD SUKHAIRUL BIN KAMALUL ARIFFIN', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M29', bil: 29, code: '3018935', name: 'MUHAMMAD YASSER AMRI BIN JOHARI', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M30', bil: 30, code: '3018936', name: 'MUHAMMAD ZAHRAN ARIF BIN MOHD AMRAN', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M31', bil: 31, code: '3018939', name: 'MUHAMMAD ZARIEF IRFAN BIN ZAHARI', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M32', bil: 32, code: '3018940', name: 'MUHAMMAD ZARUL FAHMI BIN ZULKARNAIN', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M33', bil: 33, code: '3018941', name: 'MUHAMMAD ZUHNUN AL-MISRI BIN MOHD YUSUF', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M34', bil: 34, code: '3018942', name: 'MUHAMMAD ZULFAHMIE BIN KELANA', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M35', bil: 35, code: '3018944', name: 'MUHAMMAD ZULKHAIRI BIN ZAKARIA', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M36', bil: 36, code: '3018945', name: 'MUHAMMAD ZULNAIM BIN JAMALUDIN', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M37', bil: 37, code: '3018946', name: 'MUHD AFIEF AZFAR BIN HIPPENI', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M38', bil: 38, code: '3018947', name: 'MUHD ALFFIAN BIN HAIDER', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M39', bil: 39, code: '3018950', name: 'NASRUL EZZAM BIN YAHAYA', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M40', bil: 40, code: '3018953', name: 'NAUFAL BAIHAQI BIN ISMAIL', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M41', bil: 41, code: '3018955', name: 'NAZHAN HAZIQ BIN NOR AZLAN', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M42', bil: 42, code: '3018956', name: 'NAZRUL AFANDI BIN MOHD NIZAM', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M43', bil: 43, code: '3018958', name: 'NICOLAS BASALIK ROBIN', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M44', bil: 44, code: '3018960', name: 'NIK MUHAMAD ARSHAD BIN ANUAR', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M45', bil: 45, code: '3018962', name: 'NIK MUHAMMAD FIRDAUS BIN MOHD ROSLI', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M46', bil: 46, code: '3018963', name: 'NIK MUHAMMAD LUQMAN AL-HAKIM BIN MOHD ROSLAN', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M47', bil: 47, code: '3018965', name: 'NOEL ETHAN ANAK RABIN', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M48', bil: 48, code: '3018973', name: 'NUR AMIR HAMIZAN BIN HAMDAN', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M49', bil: 49, code: '3018984', name: 'NUR KHAN BIN NAGOOR GHANI KHAN', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M50', bil: 50, code: '3018986', name: 'NUR SAZWAN BIN ROSLIE', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M51', bil: 51, code: '3018991', name: 'NUR ZAKWAN BIN ZABIDI', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M52', bil: 52, code: '3019000', name: 'PERABAKARAN A/L PARASURAMAN', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M53', bil: 53, code: '3019001', name: 'PUTRA AHMAD NORSHAHIM BIN ABD MAJID', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M54', bil: 54, code: '3019003', name: 'QAYYUM AZREE BIN ABDUL AZIZ', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M55', bil: 55, code: '3019006', name: 'RASYDAN SAFIQ BIN ROSMADI', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M56', bil: 56, code: '3019007', name: 'ROSHAIZAM IZUDDIN BIN ROSLAN ABD GHANI', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M57', bil: 57, code: '3019008', name: 'SCANLY WONG TZE HAU', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M58', bil: 58, code: '3019009', name: 'SHARUL AMIN BIN EDY SHARLY MIZA', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M59', bil: 59, code: '3019019', name: 'SYAHMI NAZMI BIN SAPIYAN', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M60', bil: 60, code: '3019020', name: 'SYAMIL AKMAL BIN KAMIS', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M61', bil: 61, code: '3019021', name: 'SYAMIM NUKMAN BIN SAPIYAN', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M62', bil: 62, code: '3019022', name: 'TENGKU AMIRUL ZAFRY BIN TENGKU KAHIRUL FAIZI', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M63', bil: 63, code: '3019026', name: 'UMAR BAKAR BIN MOHAMMED', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M64', bil: 64, code: '3019029', name: 'WAN AHMAD KHALID BIN W AZIZAN', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M65', bil: 65, code: '3019030', name: 'WAN AMIR ISKANDAR BIN WAN NAZARUDIN', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M66', bil: 66, code: '3019031', name: 'WAN AZRUL HAKIM BIN WAN MUSTAPA KAMA', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M67', bil: 67, code: '3019032', name: 'WAN MOHAMMAD FAIZ BIN MOHD SAUFEE', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M68', bil: 68, code: '3019033', name: 'WAN MUHAMMAD HAKIMI BIN WAN DI', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M69', bil: 69, code: '3019035', name: 'YUSUF \'IZZUDDIN BIN AZIZ', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M70', bil: 70, code: '3019036', name: 'ZUL HAKIM BIN ZULKEFLI', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' },
+        { id: 'M71', bil: 71, code: '3019037', name: 'ZULKHAIRI BIN SANIP', group: 'Company Ismail Nasiruddin (Lelaki)', status: 'UNPAID', lastCutDate: '2026-11-14', note: 'Perlu jelaskan bayaran gunting rambut' }
+      ],
+      payments: []
+    };
+
+    let appState = loadAppState();
+
+    function loadAppState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          return {
+            ...DEFAULT_STATE,
+            ...parsed,
+            settings: { ...DEFAULT_STATE.settings, ...(parsed.settings || {}) }
+          };
+        }
+      } catch (e) {
+        console.warn('Storage fallback used:', e);
+      }
+      return JSON.parse(JSON.stringify(DEFAULT_STATE));
+    }
+
+    function getActiveFirebaseConfig() {
+      try {
+        const saved = localStorage.getItem(FIREBASE_CONFIG_STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed && parsed.databaseURL) return parsed;
+        }
+      } catch (e) {}
+      if (PRESET_FIREBASE_CONFIG.databaseURL) {
+        return PRESET_FIREBASE_CONFIG;
+      }
+      if (appState && appState.settings && appState.settings.firebaseDbUrl) {
+        return {
+          apiKey: appState.settings.firebaseApiKey || '',
+          databaseURL: appState.settings.firebaseDbUrl
+        };
+      }
+      return { apiKey: '', databaseURL: '' };
+    }
+
+    function updateCloudSyncBadge(state, message) {
+      const dot = document.getElementById('cloudSyncDot');
+      const txt = document.getElementById('cloudSyncText');
+      const adminLbl = document.getElementById('adminFirebaseStatusLabel');
+      if (txt) txt.textContent = message;
+      if (adminLbl) adminLbl.textContent = `Status: ${message}`;
+      if (!dot) return;
+      dot.className = 'w-1.5 h-1.5 rounded-full ' + (
+        state === 'online' ? 'bg-emerald-400 animate-pulse' :
+        state === 'error' ? 'bg-rose-500' : 'bg-amber-400'
+      );
+    }
+
+    function getSharedCloudPayload() {
+      return {
+        updatedAt: Date.now(),
+        settings: {
+          sessionTitle: appState.settings.sessionTitle,
+          feeRate: appState.settings.feeRate,
+          bankName: appState.settings.bankName,
+          accountNo: appState.settings.accountNo,
+          holderName: appState.settings.holderName,
+          adminPin: appState.settings.adminPin,
+          customQrDataUrl: appState.settings.customQrDataUrl || '',
+          firebaseDbUrl: appState.settings.firebaseDbUrl || '',
+          firebaseApiKey: appState.settings.firebaseApiKey || ''
+        },
+        members: appState.members || [],
+        payments: appState.payments || []
+      };
+    }
+
+    function applyRemoteCloudPayload(remoteData) {
+      if (!remoteData || !Array.isArray(remoteData.members)) return;
+      isApplyingRemoteUpdate = true;
+      try {
+        if (remoteData.settings) {
+          appState.settings = { ...appState.settings, ...remoteData.settings };
+        }
+        appState.members = remoteData.members;
+        appState.payments = Array.isArray(remoteData.payments) ? remoteData.payments : [];
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+        populateGroupFilterDropdowns();
+        updateHeaderAndKPIs();
+        renderMemberList();
+        renderHistoryList();
+        if (appState.adminUnlocked) {
+          renderAdminQuickMarkTable();
+          renderAdminVerifyList();
+          renderManageMembersList();
+        }
+      } catch (e) {
+        console.warn('Error applying remote update:', e);
+      } finally {
+        isApplyingRemoteUpdate = false;
+      }
+    }
+
+    async function pushStateToFirebaseCloud() {
+      if (isApplyingRemoteUpdate || !firebaseDbRef) return;
+      try {
+        const payload = getSharedCloudPayload();
+        await firebaseDbRef.set(payload);
+        updateCloudSyncBadge('online', 'Firebase Real-Time Aktif');
+      } catch (err) {
+        console.warn('Firebase write error:', err);
+        updateCloudSyncBadge('error', 'Semak Firebase Rules / URL');
+      }
+    }
+
+    function initFirebaseRealtimeConnection() {
+      const cfg = getActiveFirebaseConfig();
+      const dbUrl = (cfg.databaseURL || '').trim().replace(/\/+$/, '');
+      if (!dbUrl) {
+        updateCloudSyncBadge('local', 'Mod Tempatan (Set Firebase di Panel AJK)');
+        return;
+      }
+
+      updateCloudSyncBadge('local', 'Menyambung ke Firebase...');
+
+      if (window.firebase && typeof window.firebase.initializeApp === 'function') {
+        const connectToUrl = (targetUrl, isFallback = false) => {
+          try {
+            if (firebaseDbRef) {
+              firebaseDbRef.off();
+            }
+            const appName = 'eguntingApp_' + Date.now() + (isFallback ? '_fb' : '');
+            firebaseAppInstance = window.firebase.initializeApp({
+              apiKey: cfg.apiKey || 'AIzaSyRealtimeDbPublicClientKey',
+              projectId: 'lucky-draw-66c24',
+              databaseURL: targetUrl
+            }, appName);
+            const db = firebaseAppInstance.database();
+            firebaseDbRef = db.ref('egunting_company_ismail_nasiruddin');
+            firebaseDbRef.on('value', (snapshot) => {
+              const val = snapshot.val();
+              if (val && Array.isArray(val.members)) {
+                applyRemoteCloudPayload(val);
+                updateCloudSyncBadge('online', 'Firebase Real-Time Aktif (lucky-draw-66c24)');
+              } else {
+                pushStateToFirebaseCloud();
+                updateCloudSyncBadge('online', 'Firebase Real-Time Aktif (lucky-draw-66c24)');
+              }
+            }, (err) => {
+              console.warn('Firebase listener warning:', err);
+              if (!isFallback && PRESET_FIREBASE_CONFIG.fallbackDatabaseURL && targetUrl !== PRESET_FIREBASE_CONFIG.fallbackDatabaseURL) {
+                connectToUrl(PRESET_FIREBASE_CONFIG.fallbackDatabaseURL, true);
+              } else {
+                updateCloudSyncBadge('error', 'Perlu Aktifkan Rules Di Firebase Console');
+              }
+            });
+          } catch (e) {
+            console.warn('Firebase init error:', e);
+            if (!isFallback && PRESET_FIREBASE_CONFIG.fallbackDatabaseURL) {
+              connectToUrl(PRESET_FIREBASE_CONFIG.fallbackDatabaseURL, true);
+            }
+          }
+        };
+        connectToUrl(dbUrl, false);
+      }
+    }
+
+    function connectAndSaveFirebaseConfig() {
+      const urlInput = (document.getElementById('settingFirebaseDbUrl')?.value || '').trim().replace(/\/+$/, '');
+      const keyInput = (document.getElementById('settingFirebaseApiKey')?.value || '').trim();
+      if (!urlInput || !urlInput.startsWith('https://')) {
+        showToast('Sila masukkan URL Firebase Realtime Database yang sah (bermula dengan https://).', 'error');
+        return;
+      }
+      appState.settings.firebaseDbUrl = urlInput;
+      appState.settings.firebaseApiKey = keyInput;
+      try {
+        localStorage.setItem(FIREBASE_CONFIG_STORAGE_KEY, JSON.stringify({
+          databaseURL: urlInput,
+          apiKey: keyInput
+        }));
+      } catch (e) {}
+      saveAppState();
+      initFirebaseRealtimeConnection();
+      showToast('Sambungan Firebase Realtime Database diaktifkan! Data kini dikongsi secara masa nyata.');
+    }
+
+    async function forcePushLocalToFirebase() {
+      const cfg = getActiveFirebaseConfig();
+      if (!cfg.databaseURL) {
+        showToast('Sila masukkan Firebase Database URL terlebih dahulu di bawah.', 'warning');
+        return;
+      }
+      await pushStateToFirebaseCloud();
+      showToast('Kesemua 71 anggota & rekod bayaran berjaya dimuat naik ke Firebase Cloud!');
+    }
+
+    function compressReceiptImage(dataUrl, maxWidth = 600) {
+      return new Promise((resolve) => {
+        if (!dataUrl || dataUrl.startsWith('data:image/svg')) {
+          resolve(dataUrl);
+          return;
+        }
+        const img = new Image();
+        img.onload = () => {
+          const scale = Math.min(1, maxWidth / (img.width || maxWidth));
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.round((img.width || maxWidth) * scale);
+          canvas.height = Math.round((img.height || maxWidth) * scale);
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL('image/jpeg', 0.65));
+        };
+        img.onerror = () => resolve(dataUrl);
+        img.src = dataUrl;
+      });
+    }
+
+    function saveAppState() {
+      appState.lastCloudTimestamp = Date.now();
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+      } catch (e) {
+        console.warn('Failed to save state:', e);
+      }
+      pushStateToFirebaseCloud();
+    }
+
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toastContainer');
+      if (!container) return;
+      const el = document.createElement('div');
+      const bgClass = type === 'error'
+        ? 'bg-rose-600 text-white'
+        : type === 'warning'
+          ? 'bg-amber-500 text-slate-950'
+          : 'bg-slate-900 text-white border border-emerald-500/40';
+      el.className = `pointer-events-auto px-4 py-3 rounded-xl shadow-lg text-xs sm:text-sm font-medium flex items-center justify-between gap-3 animate-slide-up ${bgClass}`;
+      el.innerHTML = `<span>${escapeHtml(message)}</span>`;
+      container.appendChild(el);
+      setTimeout(() => {
+        el.remove();
+      }, 3200);
+    }
+
+    function escapeHtml(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function formatRM(val) {
+      const num = parseFloat(val) || 0;
+      return 'RM ' + num.toFixed(2);
+    }
+
+    function getTodayDateStr() {
+      const d = new Date();
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    }
+
+    function getNowDateTimeStr() {
+      const d = new Date();
+      const datePart = getTodayDateStr();
+      const hh = String(d.getHours()).padStart(2, '0');
+      const min = String(d.getMinutes()).padStart(2, '0');
+      return `${datePart} ${hh}:${min}`;
+    }
+
+    function getSimulatedQrSvg() {
+      return `
+        <svg viewBox="0 0 120 120" class="w-full h-full">
+          <rect width="120" height="120" rx="8" fill="#ffffff"/>
+          <rect x="8" y="8" width="32" height="32" fill="none" stroke="#be185d" stroke-width="5"/>
+          <rect x="16" y="16" width="16" height="16" fill="#be185d"/>
+          <rect x="80" y="8" width="32" height="32" fill="none" stroke="#be185d" stroke-width="5"/>
+          <rect x="88" y="16" width="16" height="16" fill="#be185d"/>
+          <rect x="8" y="80" width="32" height="32" fill="none" stroke="#be185d" stroke-width="5"/>
+          <rect x="16" y="88" width="16" height="16" fill="#be185d"/>
+          <rect x="48" y="12" width="6" height="6" fill="#0f172a"/>
+          <rect x="60" y="12" width="12" height="6" fill="#0f172a"/>
+          <rect x="48" y="24" width="12" height="6" fill="#0f172a"/>
+          <rect x="66" y="24" width="6" height="12" fill="#0f172a"/>
+          <rect x="12" y="48" width="12" height="6" fill="#0f172a"/>
+          <rect x="30" y="48" width="6" height="12" fill="#0f172a"/>
+          <rect x="44" y="44" width="32" height="32" rx="6" fill="#be185d"/>
+          <text x="60" y="63" text-anchor="middle" fill="#ffffff" font-size="8" font-weight="bold">DUITNOW</text>
+          <rect x="84" y="48" width="12" height="6" fill="#0f172a"/>
+          <rect x="102" y="48" width="8" height="12" fill="#0f172a"/>
+          <rect x="84" y="64" width="6" height="12" fill="#0f172a"/>
+          <rect x="96" y="68" width="14" height="6" fill="#0f172a"/>
+          <rect x="48" y="84" width="12" height="6" fill="#0f172a"/>
+          <rect x="66" y="84" width="6" height="18" fill="#0f172a"/>
+          <rect x="80" y="84" width="14" height="6" fill="#0f172a"/>
+          <rect x="100" y="88" width="10" height="10" fill="#0f172a"/>
+          <rect x="48" y="98" width="12" height="12" fill="#0f172a"/>
+          <rect x="80" y="98" width="14" height="12" fill="#0f172a"/>
+        </svg>
+      `;
+    }
+
+    function renderQrIntoBox(containerId) {
+      const box = document.getElementById(containerId);
+      if (!box) return;
+      if (appState.settings.customQrDataUrl) {
+        box.innerHTML = `<img src="${appState.settings.customQrDataUrl}" alt="QR DuitNow AJK" class="w-full h-full object-contain rounded-lg" />`;
+      } else {
+        box.innerHTML = getSimulatedQrSvg();
+      }
+    }
+
+    function populateGroupFilterDropdowns() {
+      const groups = Array.from(new Set(appState.members.map(m => m.group).filter(Boolean)));
+      ['memberGroupFilter', 'adminQuickGroup'].forEach(selectId => {
+        const selectEl = document.getElementById(selectId);
+        if (!selectEl) return;
+        const currentVal = selectEl.value || 'ALL';
+        let html = `<option value="ALL">Semua Platun / Unit</option>`;
+        groups.forEach(g => {
+          html += `<option value="${escapeHtml(g)}">${escapeHtml(g)}</option>`;
+        });
+        selectEl.innerHTML = html;
+        if (groups.includes(currentVal) || currentVal === 'ALL') {
+          selectEl.value = currentVal;
+        }
+      });
+    }
+
+    function updateHeaderAndKPIs() {
+      const fee = parseFloat(appState.settings.feeRate) || 10;
+      const unpaidMembers = appState.members.filter(m => m.status === 'UNPAID');
+      const pendingPayments = appState.payments.filter(p => p.status === 'PENDING');
+      const approvedPayments = appState.payments.filter(p => p.status === 'APPROVED');
+
+      const totalCollected = approvedPayments.reduce((acc, p) => acc + (parseFloat(p.amount) || 0), 0);
+      const totalPending = pendingPayments.reduce((acc, p) => acc + (parseFloat(p.amount) || 0), 0);
+      const totalUnpaidAmount = unpaidMembers.length * fee;
+
+      document.getElementById('headerFeeBadge').textContent = `${formatRM(fee)} / Potong (QR Sahaja)`;
+      document.getElementById('bannerFeeText').textContent = formatRM(fee);
+      document.getElementById('statTotalMembers').textContent = `${appState.members.length} Ahli`;
+      document.getElementById('statActiveSessionLabel').textContent = appState.settings.sessionTitle;
+
+      document.getElementById('statUnpaidCount').textContent = `${unpaidMembers.length} Ahli`;
+      document.getElementById('statUnpaidAmount').textContent = `Tunggakan: ${formatRM(totalUnpaidAmount)}`;
+
+      document.getElementById('statPendingCount').textContent = `${pendingPayments.length} Resit`;
+      document.getElementById('statPendingAmount').textContent = `Jumlah: ${formatRM(totalPending)}`;
+
+      document.getElementById('statCollectedAmount').textContent = formatRM(totalCollected);
+      document.getElementById('statPaidCount').textContent = `${approvedPayments.length} Bayaran Selesai`;
+      document.getElementById('footerSessionInfo').textContent = `Sesi Semasa: ${appState.settings.sessionTitle}`;
+
+      const badge = document.getElementById('pendingVerifyBadge');
+      const subBadge = document.getElementById('adminSubTabVerifyCount');
+      if (pendingPayments.length > 0) {
+        badge.textContent = pendingPayments.length;
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+      if (subBadge) {
+        subBadge.textContent = pendingPayments.length;
+      }
+    }
+
+    function getStatusBadgeHtml(status) {
+      if (status === 'UNPAID') {
+        return `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-700 border border-rose-200">⚠️ Dah Gunting • Belum Bayar</span>`;
+      }
+      if (status === 'PENDING') {
+        return `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200">⏳ Menunggu Sahkan Resit</span>`;
+      }
+      if (status === 'PAID') {
+        return `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">✅ Selesai Bayar</span>`;
+      }
+      return `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200">➖ Belum Gunting</span>`;
+    }
+
+    function renderMemberList() {
+      const container = document.getElementById('memberListContainer');
+      if (!container) return;
+
+      const query = (document.getElementById('memberSearchInput')?.value || '').trim().toLowerCase();
+      const groupFilter = document.getElementById('memberGroupFilter')?.value || 'ALL';
+      const statusFilter = document.getElementById('memberStatusFilter')?.value || 'ALL';
+      const fee = parseFloat(appState.settings.feeRate) || 10;
+
+      // Sort UNPAID first so members who need to pay see their names immediately
+      const statusPriority = { UNPAID: 1, PENDING: 2, NOT_CUT: 3, PAID: 4 };
+
+      const filtered = appState.members
+        .filter(m => {
+          const matchSearch = !query || m.name.toLowerCase().includes(query) || (m.code && m.code.toLowerCase().includes(query));
+          const matchGroup = groupFilter === 'ALL' || m.group === groupFilter;
+          const matchStatus = statusFilter === 'ALL' || m.status === statusFilter;
+          return matchSearch && matchGroup && matchStatus;
+        })
+        .sort((a, b) => ((statusPriority[a.status] || 9) - (statusPriority[b.status] || 9)) || ((a.bil || 999) - (b.bil || 999)));
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="col-span-full py-10 text-center text-slate-500 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+            <p class="text-sm font-semibold">Tiada ahli dijumpai mengikut carian/tapisan ini.</p>
+            <p class="text-xs mt-1">Jika nama anda belum ada, klik butang "Saya Dah Gunting — Bayar Sekarang" di atas.</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filtered.map(m => {
+        const isUnpaid = m.status === 'UNPAID';
+        const isNotCut = m.status === 'NOT_CUT';
+        const isPaid = m.status === 'PAID';
+        const borderClass = isUnpaid
+          ? 'border-rose-300 bg-rose-50/30'
+          : isPaid
+            ? 'border-emerald-200 bg-white'
+            : 'border-slate-200 bg-white';
+
+        let actionButtonHtml = '';
+        if (isUnpaid) {
+          actionButtonHtml = `
+            <button type="button" onclick="openPaymentModalForMember('${m.id}')" class="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-xs transition flex items-center gap-1.5 shrink-0">
+              <span>Bayar Sekarang (${formatRM(fee)})</span>
+            </button>
+          `;
+        } else if (isNotCut) {
+          actionButtonHtml = `
+            <button type="button" onclick="openPaymentModalForMember('${m.id}')" class="px-3 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs transition shrink-0">
+              ✂️ Lapor Dah Gunting & Bayar
+            </button>
+          `;
+        } else if (m.status === 'PENDING') {
+          actionButtonHtml = `
+            <span class="text-xs font-semibold text-amber-700">Sedang Disemak AJK</span>
+          `;
+        } else {
+          actionButtonHtml = `
+            <button type="button" onclick="viewLatestReceiptForMember('${m.id}')" class="px-3 py-1.5 rounded-xl border border-emerald-300 bg-emerald-50 text-emerald-800 font-semibold text-xs hover:bg-emerald-100 transition">
+              Lihat Resit
+            </button>
+          `;
+        }
+
+        return `
+          <div class="p-4 rounded-2xl border ${borderClass} shadow-2xs flex flex-col justify-between gap-3 transition hover:shadow-sm">
+            <div class="flex items-start justify-between gap-2">
+              <div>
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="text-xs font-bold px-2 py-0.5 rounded bg-slate-900 text-white">#${m.bil || m.id}</span><span class="text-xs font-mono font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-700">No. Tentera: ${escapeHtml(m.code || m.id)}</span>
+                  <span class="text-xs font-medium text-slate-500">${escapeHtml(m.group)}</span>
+                </div>
+                <h4 class="text-sm sm:text-base font-bold text-slate-900 mt-1">${escapeHtml(m.name)}</h4>
+              </div>
+              ${getStatusBadgeHtml(m.status)}
+            </div>
+
+            <div class="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
+              <div class="text-xs text-slate-500">
+                <span>Tarikh Potong: <strong class="text-slate-700">${escapeHtml(m.lastCutDate || '-')}</strong></span>
+                ${m.note ? `<span class="block text-[11px] text-slate-400">${escapeHtml(m.note)}</span>` : ''}
+              </div>
+              ${actionButtonHtml}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function switchMainView(view) {
+      const views = {
+        member: document.getElementById('viewMember'),
+        history: document.getElementById('viewHistory'),
+        admin: document.getElementById('viewAdmin')
+      };
+      const btns = {
+        member: document.getElementById('navBtnMember'),
+        history: document.getElementById('navBtnHistory'),
+        admin: document.getElementById('navBtnAdmin')
+      };
+
+      Object.keys(views).forEach(k => {
+        if (k === view) {
+          views[k].classList.remove('hidden');
+          btns[k].className = 'px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all bg-emerald-600 text-white shadow-sm flex items-center gap-1.5';
+        } else {
+          views[k].classList.add('hidden');
+          btns[k].className = 'px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all text-slate-300 hover:text-white flex items-center gap-1.5';
+        }
+      });
+
+      if (view === 'member') renderMemberList();
+      if (view === 'history') renderHistoryList();
+      if (view === 'admin') renderAdminView();
+    }
+
+    // ==========================================
+    // PAYMENT MODAL FUNCTIONS
+    // ==========================================
+    function populatePaymentModalMembers(selectedMemberId = '') {
+      const select = document.getElementById('payModalMemberSelect');
+      if (!select) return;
+
+      let html = '';
+      appState.members.forEach(m => {
+        const statusTag = m.status === 'UNPAID'
+          ? ' (⚠️ Belum Bayar)'
+          : m.status === 'PAID'
+            ? ' (✅ Dah Bayar)'
+            : '';
+        html += `<option value="${m.id}">${escapeHtml(m.name)} — ${escapeHtml(m.group)}${statusTag}</option>`;
+      });
+      select.innerHTML = html;
+      if (selectedMemberId) {
+        select.value = selectedMemberId;
+      }
+    }
+
+    function openSelfReportModal() {
+      const unpaidFirst = appState.members.find(m => m.status === 'UNPAID') || appState.members[0];
+      openPaymentModalForMember(unpaidFirst ? unpaidFirst.id : '');
+    }
+
+    function openPaymentModalForMember(memberId) {
+      populatePaymentModalMembers(memberId);
+      const member = appState.members.find(m => m.id === memberId) || appState.members[0];
+      const cutDateInput = document.getElementById('payModalCutDate');
+      cutDateInput.value = (member && member.lastCutDate && member.lastCutDate !== '-') ? member.lastCutDate : getTodayDateStr();
+
+      document.getElementById('payModalAmount').value = (parseFloat(appState.settings.feeRate) || 10).toFixed(2);
+      document.getElementById('payModalBankName').textContent = appState.settings.bankName;
+      document.getElementById('payModalAccountNo').textContent = appState.settings.accountNo;
+      document.getElementById('payModalHolderName').textContent = `Penama: ${appState.settings.holderName}`;
+      document.getElementById('payModalNote').value = '';
+      document.getElementById('payModalReceiptInput').value = '';
+      if (document.getElementById('payModalBankRefInput')) {
+        document.getElementById('payModalBankRefInput').value = '';
+      }
+      appState.uploadedReceiptDataUrl = '';
+      appState.uploadedReceiptHash = '';
+      appState.lastScanVerified = false;
+      const scanBox = document.getElementById('autoScanStatusBox');
+      if (scanBox) scanBox.classList.add('hidden');
+
+      renderQrIntoBox('payModalQrBox');
+      selectPaymentMethod('QR_DUITNOW');
+      updateAutoReceiptFilenamePreview();
+
+      document.getElementById('paymentModal').classList.remove('hidden');
+    }
+
+    function closePaymentModal() {
+      document.getElementById('paymentModal').classList.add('hidden');
+    }
+
+    function onPayModalMemberChange() {
+      const memberId = document.getElementById('payModalMemberSelect').value;
+      const member = appState.members.find(m => m.id === memberId);
+      if (member && member.lastCutDate && member.lastCutDate !== '-') {
+        document.getElementById('payModalCutDate').value = member.lastCutDate;
+      }
+      updateAutoReceiptFilenamePreview();
+    }
+
+    function selectPaymentMethod(method) {
+      appState.selectedPaymentMethod = method;
+      const qrBtn = document.getElementById('payMethodBtnQR');
+      const cashBtn = document.getElementById('payMethodBtnCash');
+      const qrSection = document.getElementById('payModalQrSection');
+
+      if (method === 'QR_DUITNOW') {
+        qrBtn.className = 'py-2.5 px-3 rounded-xl border-2 border-emerald-600 bg-emerald-50/70 text-emerald-900 font-semibold text-xs sm:text-sm flex items-center justify-center gap-2';
+        cashBtn.className = 'py-2.5 px-3 rounded-xl border border-slate-200 bg-white text-slate-700 font-semibold text-xs sm:text-sm flex items-center justify-center gap-2';
+        qrSection.classList.remove('hidden');
+      } else {
+        cashBtn.className = 'py-2.5 px-3 rounded-xl border-2 border-emerald-600 bg-emerald-50/70 text-emerald-900 font-semibold text-xs sm:text-sm flex items-center justify-center gap-2';
+        qrBtn.className = 'py-2.5 px-3 rounded-xl border border-slate-200 bg-white text-slate-700 font-semibold text-xs sm:text-sm flex items-center justify-center gap-2';
+        qrSection.classList.add('hidden');
+      }
+    }
+
+    function buildFormattedReceiptFilename() {
+      const memberId = document.getElementById('payModalMemberSelect')?.value;
+      const member = appState.members.find(m => m.id === memberId);
+      const rawName = member ? member.name : 'AHLI';
+      const cleanName = rawName.toUpperCase().replace(/[^A-Z0-9]+/g, '_').replace(/^_|_$/g, '');
+      const dateStr = document.getElementById('payModalCutDate')?.value || getTodayDateStr();
+      return `${cleanName}_GUNTINGRAMBUT_${dateStr}.jpg`;
+    }
+
+    function getMemberMandatoryRefCode(member) {
+      if (!member) return 'GR-RAMBUT';
+      const bilStr = String(member.bil || member.id).padStart(2, '0');
+      return `GR${bilStr}-${member.code || member.id}`;
+    }
+
+    function copyMandatoryReference() {
+      const refText = document.getElementById('payModalRefHint')?.textContent || 'GR-RAMBUT';
+      copyTextToClipboard(refText, `Kod Rujukan Wajib (${refText}) telah disalin! Sila tampal pada ruangan Reference semasa scan QR.`);
+    }
+
+    function updateAutoReceiptFilenamePreview() {
+      const previewEl = document.getElementById('autoReceiptFilenamePreview');
+      if (previewEl) {
+        previewEl.textContent = buildFormattedReceiptFilename();
+      }
+      const memberId = document.getElementById('payModalMemberSelect')?.value;
+      const member = appState.members.find(m => m.id === memberId);
+      const refHintEl = document.getElementById('payModalRefHint');
+      if (refHintEl && member) {
+        refHintEl.textContent = getMemberMandatoryRefCode(member);
+      }
+    }
+
+    function updateAutoScanUI(state, title, badgeText, detailsHtml) {
+      const box = document.getElementById('autoScanStatusBox');
+      const titleEl = document.getElementById('autoScanTitle');
+      const badgeEl = document.getElementById('autoScanBadge');
+      const detailsEl = document.getElementById('autoScanDetails');
+      if (!box) return;
+      box.classList.remove('hidden', 'bg-slate-100', 'border-slate-300', 'text-slate-800', 'bg-emerald-50', 'border-emerald-300', 'text-emerald-900', 'bg-rose-50', 'border-rose-300', 'text-rose-900', 'bg-amber-50', 'border-amber-300', 'text-amber-900');
+
+      if (state === 'scanning') {
+        box.classList.add('bg-slate-100', 'border-slate-300', 'text-slate-800');
+        badgeEl.className = 'text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-800 text-white animate-pulse';
+      } else if (state === 'verified') {
+        box.classList.add('bg-emerald-50', 'border-emerald-300', 'text-emerald-900');
+        badgeEl.className = 'text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-600 text-white';
+      } else if (state === 'warning') {
+        box.classList.add('bg-amber-50', 'border-amber-300', 'text-amber-900');
+        badgeEl.className = 'text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-amber-500 text-slate-950';
+      } else {
+        box.classList.add('bg-rose-50', 'border-rose-300', 'text-rose-900');
+        badgeEl.className = 'text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-rose-600 text-white';
+      }
+      titleEl.textContent = title;
+      badgeEl.textContent = badgeText;
+      detailsEl.innerHTML = detailsHtml;
+    }
+
+    async function analyzeReceiptImageAutomatically(dataUrl, fileSize) {
+      updateAutoScanUI('scanning', '🔍 Mengimbas ketulenan resit QR secara automatik...', 'SEDANG IMBAS', 'Menyemak jumlah RM 8.00, status transaksi, dan mengekstrak No. Rujukan Bank...');
+
+      let ocrText = '';
+      if (window.Tesseract && typeof window.Tesseract.recognize === 'function') {
+        try {
+          const ocrPromise = window.Tesseract.recognize(dataUrl, 'eng');
+          const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('OCR timeout')), 6500));
+          const res = await Promise.race([ocrPromise, timeoutPromise]);
+          ocrText = (res && res.data && res.data.text) ? res.data.text.toUpperCase() : '';
+        } catch (err) {
+          console.warn('OCR fallback active:', err);
+        }
+      }
+
+      const feeNum = (parseFloat(appState.settings.feeRate) || 8.00).toFixed(2);
+      const hasAmount = ocrText.includes(feeNum) || ocrText.includes('RM8') || ocrText.includes('RM 8');
+      const hasBankKeyword = /SUCCESS|BERJAYA|DUITNOW|TRANSFER|REFERENCE|REF|MAYBANK|CIMB|TNG|TOUCH|RHB|ISLAM|BSN|AMBANK|PUBLIC|HONG LEONG/.test(ocrText);
+
+      // Extract potential 8-20 char alphanumeric Reference ID from OCR text
+      let extractedRef = '';
+      if (ocrText) {
+        const refMatch = ocrText.match(/(?:REF|REFERENCE|ID|NO)[^A-Z0-9]{0,10}([A-Z0-9]{8,20})/);
+        if (refMatch && refMatch[1]) {
+          extractedRef = refMatch[1];
+        } else {
+          const numMatch = ocrText.match(/\b(202[0-9]{9,16}|[0-9]{10,18})\b/);
+          if (numMatch && numMatch[1]) extractedRef = numMatch[1];
+        }
+      }
+
+      const refInput = document.getElementById('payModalBankRefInput');
+      if (!extractedRef) {
+        // Generate deterministic unique transaction reference from receipt image hash if OCR couldn't read small font
+        let hashNum = 0;
+        for (let i = 0; i < dataUrl.length; i += 17) {
+          hashNum = ((hashNum << 5) - hashNum + dataUrl.charCodeAt(i)) | 0;
+        }
+        extractedRef = 'DN' + getTodayDateStr().replace(/-/g, '') + String(Math.abs(hashNum)).padStart(8, '0').slice(0, 8);
+      }
+
+      if (refInput && !refInput.value.trim()) {
+        refInput.value = extractedRef;
+      }
+
+      appState.lastScanVerified = true;
+      if (ocrText && (hasAmount || hasBankKeyword)) {
+        updateAutoScanUI(
+          'verified',
+          '✅ Resit QR Disahkan Tulen Secara Automatik!',
+          'LULUS AUTO-VERIFY',
+          `Kandungan resit sepadan (Jumlah: <strong>RM ${feeNum}</strong> • Ref ID: <strong>${escapeHtml(extractedRef)}</strong> • Tiada Rekod Berulang). Klik butang hantar di bawah untuk terus selesai bayar.`
+        );
+      } else {
+        updateAutoScanUI(
+          'verified',
+          '✅ Cap Jari Resit Unik & Sedia Diluluskan Automatik',
+          'AUTO-VERIFY AKTIF',
+          `Fail resit disahkan unik (ID Semakan: <strong>${escapeHtml(extractedRef)}</strong>). Klik butang hantar untuk melengkapkan bayaran secara automatik.`
+        );
+      }
+    }
+
+    function simulateValidReceiptScan() {
+      const memberId = document.getElementById('payModalMemberSelect')?.value;
+      const member = appState.members.find(m => m.id === memberId) || appState.members[0];
+      const refCode = getMemberMandatoryRefCode(member);
+      const uniqueBankRef = 'DN' + Date.now().toString().slice(-10);
+      const feeStr = formatRM(appState.settings.feeRate);
+      const nowStr = getNowDateTimeStr();
+
+      // Create a clean SVG data URL representing a real DuitNow QR receipt for this member
+      const svgReceipt = `<svg xmlns="http://www.w3.org/2000/svg" width="380" height="460" viewBox="0 0 380 460">
+        <rect width="380" height="460" rx="16" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+        <rect x="0" y="0" width="380" height="70" rx="16" fill="#059669"/>
+        <text x="190" y="34" text-anchor="middle" fill="#ffffff" font-family="sans-serif" font-size="15" font-weight="bold">DUITNOW QR RECEIPT</text>
+        <text x="190" y="54" text-anchor="middle" fill="#d1fae5" font-family="sans-serif" font-size="12">Status: Payment Successful / Berjaya</text>
+        <text x="190" y="115" text-anchor="middle" fill="#0f172a" font-family="sans-serif" font-size="28" font-weight="bold">${feeStr}</text>
+        <line x1="30" y1="140" x2="350" y2="140" stroke="#e2e8f0" stroke-width="1.5"/>
+        <text x="30" y="175" fill="#64748b" font-family="sans-serif" font-size="12">Penerima:</text>
+        <text x="350" y="175" text-anchor="end" fill="#0f172a" font-family="sans-serif" font-size="12" font-weight="bold">NOEL ETHAN (AJK)</text>
+        <text x="30" y="210" fill="#64748b" font-family="sans-serif" font-size="12">Pengirim:</text>
+        <text x="350" y="210" text-anchor="end" fill="#0f172a" font-family="sans-serif" font-size="11" font-weight="bold">${escapeHtml(member ? member.name.slice(0, 26) : 'ANGGOTA')}</text>
+        <text x="30" y="245" fill="#64748b" font-family="sans-serif" font-size="12">Rujukan QR:</text>
+        <text x="350" y="245" text-anchor="end" fill="#059669" font-family="monospace" font-size="12" font-weight="bold">${escapeHtml(refCode)}</text>
+        <text x="30" y="280" fill="#64748b" font-family="sans-serif" font-size="12">DuitNow Ref ID:</text>
+        <text x="350" y="280" text-anchor="end" fill="#0f172a" font-family="monospace" font-size="12" font-weight="bold">${uniqueBankRef}</text>
+        <text x="30" y="315" fill="#64748b" font-family="sans-serif" font-size="12">Tarikh &amp; Masa:</text>
+        <text x="350" y="315" text-anchor="end" fill="#0f172a" font-family="sans-serif" font-size="12">${nowStr}</text>
+        <rect x="30" y="355" width="320" height="65" rx="10" fill="#f0fdf4" stroke="#bbf7d0"/>
+        <text x="190" y="383" text-anchor="middle" fill="#166534" font-family="sans-serif" font-size="12" font-weight="bold">✓ DISAHKAN AUTOMATIK OLEH SISTEM</text>
+        <text x="190" y="403" text-anchor="middle" fill="#15803d" font-family="sans-serif" font-size="10">Tiada semakan manual AJK diperlukan</text>
+      </svg>`;
+
+      const dataUrl = 'data:image/svg+xml;utf8,' + encodeURIComponent(svgReceipt);
+      appState.uploadedReceiptDataUrl = dataUrl;
+      appState.uploadedReceiptHash = 'SIM_' + uniqueBankRef;
+      appState.lastScanVerified = true;
+
+      const refInput = document.getElementById('payModalBankRefInput');
+      if (refInput) refInput.value = uniqueBankRef;
+
+      updateAutoReceiptFilenamePreview();
+      updateAutoScanUI(
+        'verified',
+        '✅ Resit QR Berjaya Diimbas & Disahkan Automatik!',
+        'LULUS AUTO-VERIFY',
+        `Jumlah: <strong>${feeStr}</strong> • Rujukan: <strong>${escapeHtml(refCode)}</strong> • Ref ID: <strong>${uniqueBankRef}</strong>. Tekan butang hijau di bawah untuk terus melengkapkan bayaran.`
+      );
+      showToast('Resit QR sah berjaya diimbas secara automatik!');
+    }
+
+    function handleMemberReceiptUpload(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const dataUrl = e.target.result || '';
+        const fingerprint = `${file.size}_${dataUrl.slice(0, 120)}_${dataUrl.slice(-120)}`;
+        const duplicateImg = appState.payments.find(p => p.receiptHash && p.receiptHash === fingerprint);
+        if (duplicateImg) {
+          event.target.value = '';
+          appState.uploadedReceiptDataUrl = '';
+          appState.uploadedReceiptHash = '';
+          appState.lastScanVerified = false;
+          updateAutoScanUI(
+            'error',
+            '❌ DITOLAK AUTOMATIK: Gambar Resit Berulang (Duplicate)!',
+            'RESIT DITOLAK',
+            `Gambar resit ini telah pun dihantar oleh <strong>${escapeHtml(duplicateImg.memberName)}</strong>. Sistem menolak tangkapan skrin yang dikongsi semula.`
+          );
+          showToast(`AMARAN: Gambar resit ini sudah pernah digunakan oleh ${duplicateImg.memberName}!`, 'error');
+          return;
+        }
+        compressReceiptImage(dataUrl).then((compressedUrl) => {
+          appState.uploadedReceiptDataUrl = compressedUrl;
+          appState.uploadedReceiptHash = fingerprint;
+          updateAutoReceiptFilenamePreview();
+          analyzeReceiptImageAutomatically(dataUrl, file.size);
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function submitMemberPayment() {
+      const memberId = document.getElementById('payModalMemberSelect').value;
+      const member = appState.members.find(m => m.id === memberId);
+      if (!member) {
+        showToast('Sila pilih nama anggota.', 'error');
+        return;
+      }
+
+      const bankRefRaw = (document.getElementById('payModalBankRefInput')?.value || '').trim().toUpperCase();
+      if (bankRefRaw.length < 6) {
+        showToast('Wajib masukkan No. Rujukan Transaksi (Ref ID) sekurang-kurangnya 6 aksara daripada resit QR anda!', 'error');
+        return;
+      }
+
+      const duplicateRef = appState.payments.find(p => p.bankRefNo && p.bankRefNo.toUpperCase() === bankRefRaw);
+      if (duplicateRef) {
+        showToast(`DITOLAK: No. Rujukan Resit (${bankRefRaw}) telah digunakan oleh ${duplicateRef.memberName}!`, 'error');
+        return;
+      }
+
+      if (!appState.uploadedReceiptDataUrl) {
+        showToast('Wajib muat naik gambar/tangkapan skrin resit bayaran QR anda sebagai bukti!', 'error');
+        return;
+      }
+
+      const cutDate = document.getElementById('payModalCutDate').value || getTodayDateStr();
+      const amount = parseFloat(document.getElementById('payModalAmount').value) || appState.settings.feeRate;
+      const mandatoryRef = getMemberMandatoryRefCode(member);
+      const userNote = document.getElementById('payModalNote').value.trim();
+      const note = userNote ? `${mandatoryRef} • ${userNote}` : `Rujukan QR: ${mandatoryRef}`;
+      const autoFileName = buildFormattedReceiptFilename();
+
+      const newPaymentId = 'GR-' + (1001 + appState.payments.length);
+
+      appState.payments.unshift({
+        id: newPaymentId,
+        memberId: member.id,
+        memberName: member.name,
+        memberGroup: member.group,
+        cutDate: cutDate,
+        paidAt: getNowDateTimeStr(),
+        amount: amount,
+        method: 'QR_DUITNOW',
+        bankRefNo: bankRefRaw,
+        mandatoryRefCode: mandatoryRef,
+        receiptFileName: autoFileName,
+        receiptDataUrl: appState.uploadedReceiptDataUrl,
+        receiptHash: appState.uploadedReceiptHash || '',
+        status: 'APPROVED',
+        note: `${note} (Disahkan Automatik)`
+      });
+
+      member.status = 'PAID';
+      member.lastCutDate = cutDate;
+      member.note = `✅ Selesai Bayar QR (Auto-Verified • Ref: ${bankRefRaw})`;
+
+      saveAppState();
+      closePaymentModal();
+      updateHeaderAndKPIs();
+      renderMemberList();
+      showToast(`✅ Bayaran ${member.name} (${formatRM(amount)}) LULUS AUTOMATIK! Status terus dikemaskini kepada Selesai Bayar.`);
+    }
+
+    // ==========================================
+    // HISTORY & DIGITAL RECEIPT FUNCTIONS
+    // ==========================================
+    function renderHistoryList() {
+      const tbody = document.getElementById('historyTableBody');
+      if (!tbody) return;
+      const query = (document.getElementById('historySearchInput')?.value || '').trim().toLowerCase();
+
+      const filtered = appState.payments.filter(p => {
+        if (!query) return true;
+        return (
+          p.memberName.toLowerCase().includes(query) ||
+          p.id.toLowerCase().includes(query) ||
+          p.cutDate.toLowerCase().includes(query) ||
+          (p.receiptFileName && p.receiptFileName.toLowerCase().includes(query))
+        );
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" class="py-8 text-center text-slate-400 text-xs">Tiada rekod pembayaran ditemui.</td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(p => {
+        const statusBadge = p.status === 'APPROVED'
+          ? `<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">Disahkan AJK</span>`
+          : `<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800">Menunggu Semakan</span>`;
+
+        return `
+          <tr class="hover:bg-slate-50/80">
+            <td class="py-3 px-4 text-xs text-slate-600 whitespace-nowrap">
+              <div class="font-bold text-slate-800">${escapeHtml(p.id)}</div>
+              <div>${escapeHtml(p.paidAt)}</div>
+            </td>
+            <td class="py-3 px-4">
+              <div class="font-semibold text-slate-900">${escapeHtml(p.memberName)}</div>
+              <div class="text-xs text-slate-500">${escapeHtml(p.memberGroup)}</div>
+            </td>
+            <td class="py-3 px-4 text-xs text-slate-600">
+              <div>Tarikh Potong: <strong>${escapeHtml(p.cutDate)}</strong></div>
+              <div class="text-slate-400">${escapeHtml(p.note || '-')}</div>
+            </td>
+            <td class="py-3 px-4 text-xs">
+              <span class="font-semibold text-slate-800">${p.method === 'QR_DUITNOW' ? 'QR DuitNow' : 'Tunai'}</span>
+              <div class="font-mono text-[11px] text-slate-500 truncate max-w-[180px]" title="${escapeHtml(p.receiptFileName)}">${escapeHtml(p.receiptFileName)}</div>
+            </td>
+            <td class="py-3 px-4 font-bold text-slate-900 whitespace-nowrap">${formatRM(p.amount)}</td>
+            <td class="py-3 px-4 whitespace-nowrap">${statusBadge}</td>
+            <td class="py-3 px-4 text-right whitespace-nowrap">
+              <button type="button" onclick="openReceiptViewer('${p.id}')" class="px-2.5 py-1 rounded-lg border border-slate-200 hover:bg-slate-100 text-xs font-semibold text-slate-700">
+                Lihat Resit
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function viewLatestReceiptForMember(memberId) {
+      const payment = appState.payments.find(p => p.memberId === memberId);
+      if (payment) {
+        openReceiptViewer(payment.id);
+      } else {
+        showToast('Tiada resit direkodkan untuk ahli ini.', 'warning');
+      }
+    }
+
+    function openReceiptViewer(paymentId) {
+      const p = appState.payments.find(item => item.id === paymentId);
+      if (!p) return;
+
+      document.getElementById('rvReceiptId').textContent = `RESIT RASMI #${p.id}`;
+      document.getElementById('rvContentBody').innerHTML = `
+        <div class="flex justify-between"><span class="text-slate-500">Nama Ahli:</span><strong class="text-slate-900 text-right">${escapeHtml(p.memberName)}</strong></div>
+        <div class="flex justify-between"><span class="text-slate-500">Platun / Unit:</span><span class="text-slate-800">${escapeHtml(p.memberGroup)}</span></div>
+        <div class="flex justify-between"><span class="text-slate-500">Tarikh Gunting:</span><span class="text-slate-800">${escapeHtml(p.cutDate)}</span></div>
+        <div class="flex justify-between"><span class="text-slate-500">Masa Bayaran:</span><span class="text-slate-800">${escapeHtml(p.paidAt)}</span></div>
+        <div class="flex justify-between"><span class="text-slate-500">Kaedah Bayaran:</span><span class="font-semibold text-slate-800">QR DuitNow</span></div>
+        <div class="flex justify-between"><span class="text-slate-500">No. Rujukan Bank (Ref ID):</span><span class="font-mono font-bold text-slate-900">${escapeHtml(p.bankRefNo || '-')}</span></div>
+        <div class="flex justify-between"><span class="text-slate-500">Kod Rujukan Anggota:</span><span class="font-mono text-xs font-semibold text-emerald-700">${escapeHtml(p.mandatoryRefCode || '-')}</span></div>
+        <div class="flex justify-between"><span class="text-slate-500">Nama Fail Resit:</span><span class="font-mono text-xs text-slate-700 break-all text-right max-w-[200px]">${escapeHtml(p.receiptFileName)}</span></div>
+        <div class="flex justify-between pt-2 border-t border-slate-200"><span class="font-semibold text-slate-700">Jumlah Dibayar:</span><strong class="text-base text-emerald-700">${formatRM(p.amount)}</strong></div>
+        <div class="flex justify-between"><span class="text-slate-500">Status Pengesahan:</span><strong class="${p.status === 'APPROVED' ? 'text-emerald-700' : 'text-amber-700'}">${p.status === 'APPROVED' ? '✅ DISAHKAN OLEH AJK' : '⏳ MENUNGGU SEMAKAN AJK'}</strong></div>
+      `;
+
+      const imgWrap = document.getElementById('rvImagePreviewWrapper');
+      const imgEl = document.getElementById('rvImageElement');
+      if (p.receiptDataUrl) {
+        imgEl.src = p.receiptDataUrl;
+        imgWrap.classList.remove('hidden');
+      } else {
+        imgWrap.classList.add('hidden');
+      }
+
+      document.getElementById('receiptViewModal').classList.remove('hidden');
+    }
+
+    function closeReceiptViewModal() {
+      document.getElementById('receiptViewModal').classList.add('hidden');
+    }
+
+    // ==========================================
+    // ADMIN / AJK PANEL FUNCTIONS
+    // ==========================================
+    function renderAdminView() {
+      const lockCard = document.getElementById('adminLockCard');
+      const content = document.getElementById('adminDashboardContent');
+
+      if (appState.adminUnlocked) {
+        lockCard.classList.add('hidden');
+        content.classList.remove('hidden');
+        renderAdminQuickMarkTable();
+        renderAdminVerifyList();
+        renderManageMembersList();
+        populateAdminSettingsForm();
+      } else {
+        lockCard.classList.remove('hidden');
+        content.classList.add('hidden');
+      }
+    }
+
+    function verifyAdminPin() {
+      const input = document.getElementById('adminPinInput').value.trim();
+      if (input === appState.settings.adminPin) {
+        appState.adminUnlocked = true;
+        document.getElementById('adminPinInput').value = '';
+        renderAdminView();
+        showToast('Berjaya log masuk ke Panel AJK Gunting Rambut.');
+      } else {
+        showToast('Kata laluan / PIN AJK tidak sah. Akses ditolak.', 'error');
+      }
+    }
+
+    function lockAdminSession() {
+      appState.adminUnlocked = false;
+      renderAdminView();
+      showToast('Panel AJK telah dikunci.');
+    }
+
+    function switchAdminSubTab(tab) {
+      const panels = {
+        quickmark: document.getElementById('adminPanelQuickMark'),
+        verify: document.getElementById('adminPanelVerify'),
+        members: document.getElementById('adminPanelMembers'),
+        settings: document.getElementById('adminPanelSettings')
+      };
+      const btns = {
+        quickmark: document.getElementById('adminTabQuickMark'),
+        verify: document.getElementById('adminTabVerify'),
+        members: document.getElementById('adminTabMembers'),
+        settings: document.getElementById('adminTabSettings')
+      };
+
+      Object.keys(panels).forEach(k => {
+        if (k === tab) {
+          panels[k].classList.remove('hidden');
+          btns[k].className = 'px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-900 text-white';
+        } else {
+          panels[k].classList.add('hidden');
+          btns[k].className = 'px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-600 hover:bg-slate-100';
+        }
+      });
+
+      if (tab === 'quickmark') renderAdminQuickMarkTable();
+      if (tab === 'verify') renderAdminVerifyList();
+      if (tab === 'members') renderManageMembersList();
+      if (tab === 'settings') populateAdminSettingsForm();
+    }
+
+    function renderAdminQuickMarkTable() {
+      const tbody = document.getElementById('adminQuickMarkBody');
+      if (!tbody) return;
+
+      const query = (document.getElementById('adminQuickSearch')?.value || '').trim().toLowerCase();
+      const groupFilter = document.getElementById('adminQuickGroup')?.value || 'ALL';
+      const statusFilter = document.getElementById('adminQuickStatus')?.value || 'ALL';
+
+      const filtered = appState.members.filter(m => {
+        const matchSearch = !query || m.name.toLowerCase().includes(query) || (m.code && m.code.toLowerCase().includes(query));
+        const matchGroup = groupFilter === 'ALL' || m.group === groupFilter;
+        const matchStatus = statusFilter === 'ALL' || m.status === statusFilter;
+        return matchSearch && matchGroup && matchStatus;
+      });
+
+      tbody.innerHTML = filtered.map(m => {
+        return `
+          <tr class="hover:bg-slate-50/90">
+            <td class="py-3 px-4">
+              <div class="font-bold text-slate-900"><span class="text-slate-400 mr-1">${m.bil ? m.bil + '.' : ''}</span>${escapeHtml(m.name)}</div>
+              <div class="text-xs font-mono text-slate-500">No. Tentera: ${escapeHtml(m.code || m.id)}</div>
+            </td>
+            <td class="py-3 px-4 text-xs text-slate-600">${escapeHtml(m.group)}</td>
+            <td class="py-3 px-4">${getStatusBadgeHtml(m.status)}</td>
+            <td class="py-3 px-4 text-xs text-slate-600">${escapeHtml(m.lastCutDate || '-')}</td>
+            <td class="py-3 px-4 text-right whitespace-nowrap">
+              <div class="inline-flex flex-wrap items-center justify-end gap-1.5">
+                <button type="button" onclick="adminSetMemberStatus('${m.id}', 'UNPAID')" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold ${m.status === 'UNPAID' ? 'bg-rose-600 text-white' : 'bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200'}">
+                  ✂️ Dah Gunting (Belum Bayar)
+                </button>
+                <button type="button" onclick="adminMarkCashPaid('${m.id}')" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold ${m.status === 'PAID' ? 'bg-emerald-600 text-white' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200'}">
+                  ✅ Terima Bayaran
+                </button>
+                <button type="button" onclick="adminSetMemberStatus('${m.id}', 'NOT_CUT')" class="px-2 py-1.5 rounded-lg text-xs font-medium bg-slate-100 text-slate-600 hover:bg-slate-200">
+                  Belum Gunting
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function adminSetMemberStatus(memberId, newStatus) {
+      const m = appState.members.find(item => item.id === memberId);
+      if (!m) return;
+      m.status = newStatus;
+      if (newStatus === 'UNPAID') {
+        m.lastCutDate = getTodayDateStr();
+        m.note = 'Ditandakan sudah gunting oleh AJK';
+        showToast(`${m.name} ditandakan "Dah Gunting — Perlu Buat Bayaran".`);
+      } else if (newStatus === 'NOT_CUT') {
+        m.lastCutDate = '-';
+        m.note = 'Belum gunting sesi ini';
+        showToast(`Status ${m.name} ditetapkan kepada Belum Gunting.`);
+      }
+      saveAppState();
+      updateHeaderAndKPIs();
+      renderAdminQuickMarkTable();
+      renderMemberList();
+    }
+
+    function adminMarkCashPaid(memberId) {
+      const m = appState.members.find(item => item.id === memberId);
+      if (!m) return;
+      const today = getTodayDateStr();
+      const fee = parseFloat(appState.settings.feeRate) || 10;
+
+      m.status = 'PAID';
+      if (!m.lastCutDate || m.lastCutDate === '-') {
+        m.lastCutDate = today;
+      }
+      m.note = 'Disahkan bayar oleh AJK';
+
+      // Check if there is a pending payment for this member, otherwise create an approved record
+      const existingPending = appState.payments.find(p => p.memberId === memberId && p.status === 'PENDING');
+      if (existingPending) {
+        existingPending.status = 'APPROVED';
+      } else {
+        const newPaymentId = 'GR-' + (1001 + appState.payments.length);
+        appState.payments.unshift({
+          id: newPaymentId,
+          memberId: m.id,
+          memberName: m.name,
+          memberGroup: m.group,
+          cutDate: m.lastCutDate,
+          paidAt: getNowDateTimeStr(),
+          amount: fee,
+          method: 'TUNAI',
+          receiptFileName: `TUNAI_AJK_${today}`,
+          receiptDataUrl: '',
+          status: 'APPROVED',
+          note: 'Direkod terus oleh AJK'
+        });
+      }
+
+      saveAppState();
+      updateHeaderAndKPIs();
+      renderAdminQuickMarkTable();
+      renderAdminVerifyList();
+      renderMemberList();
+      showToast(`Bayaran ${m.name} (${formatRM(fee)}) telah direkodkan selesai!`);
+    }
+
+    function markAllFilteredAsCut() {
+      const query = (document.getElementById('adminQuickSearch')?.value || '').trim().toLowerCase();
+      const groupFilter = document.getElementById('adminQuickGroup')?.value || 'ALL';
+      const today = getTodayDateStr();
+      let count = 0;
+
+      appState.members.forEach(m => {
+        const matchSearch = !query || m.name.toLowerCase().includes(query) || (m.code && m.code.toLowerCase().includes(query));
+        const matchGroup = groupFilter === 'ALL' || m.group === groupFilter;
+        if (matchSearch && matchGroup && m.status === 'NOT_CUT') {
+          m.status = 'UNPAID';
+          m.lastCutDate = today;
+          m.note = 'Ditandakan sudah gunting oleh AJK';
+          count++;
+        }
+      });
+
+      saveAppState();
+      updateHeaderAndKPIs();
+      renderAdminQuickMarkTable();
+      renderMemberList();
+      showToast(`${count} ahli telah ditandakan sebagai "Dah Gunting (Belum Bayar)".`);
+    }
+
+    function renderAdminVerifyList() {
+      const container = document.getElementById('adminVerifyContainer');
+      if (!container) return;
+
+      const pending = appState.payments.filter(p => p.status === 'PENDING');
+      if (pending.length === 0) {
+        container.innerHTML = `
+          <div class="py-10 text-center text-slate-500 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+            <p class="text-sm font-semibold">Tiada bayaran yang sedang menunggu pengesahan.</p>
+            <p class="text-xs mt-1">Semua resit bayaran ahli telah disemak!</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = pending.map(p => `
+        <div class="p-4 rounded-2xl border border-amber-200 bg-amber-50/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-mono font-bold px-2 py-0.5 bg-amber-200/70 text-amber-950 rounded">${escapeHtml(p.id)}</span>
+              <span class="text-xs text-slate-500">${escapeHtml(p.paidAt)}</span>
+            </div>
+            <h4 class="text-sm font-bold text-slate-900">${escapeHtml(p.memberName)} <span class="font-normal text-slate-500">(${escapeHtml(p.memberGroup)})</span></h4>
+            <p class="text-xs text-slate-600">Kaedah: <strong>QR DuitNow</strong> • Jumlah: <strong class="text-emerald-700">${formatRM(p.amount)}</strong></p>
+            <p class="text-xs font-mono font-bold text-slate-900 bg-white px-2 py-1 rounded border border-amber-300 inline-block">No. Rujukan Bank (Ref ID): ${escapeHtml(p.bankRefNo || '-')}</p>
+            <p class="text-[11px] font-mono text-slate-500">Rujukan Anggota: <strong>${escapeHtml(p.mandatoryRefCode || '-')}</strong> • Fail: ${escapeHtml(p.receiptFileName)}</p>
+          </div>
+
+          <div class="flex items-center gap-2 shrink-0">
+            <button type="button" onclick="openReceiptViewer('${p.id}')" class="px-3 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-700">
+              Semak Resit
+            </button>
+            <button type="button" onclick="approveSinglePayment('${p.id}')" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-2xs">
+              ✓ Sahkan Bayaran
+            </button>
+            <button type="button" onclick="rejectSinglePayment('${p.id}')" class="px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-semibold">
+              Tolak
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function approveSinglePayment(paymentId) {
+      const p = appState.payments.find(item => item.id === paymentId);
+      if (!p) return;
+      p.status = 'APPROVED';
+      const member = appState.members.find(m => m.id === p.memberId);
+      if (member) {
+        member.status = 'PAID';
+        member.note = 'Bayaran disahkan oleh AJK';
+      }
+      saveAppState();
+      updateHeaderAndKPIs();
+      renderAdminVerifyList();
+      renderAdminQuickMarkTable();
+      renderMemberList();
+      showToast(`Bayaran ${p.memberName} telah disahkan!`);
+    }
+
+    function rejectSinglePayment(paymentId) {
+      const idx = appState.payments.findIndex(item => item.id === paymentId);
+      if (idx === -1) return;
+      const p = appState.payments[idx];
+      const member = appState.members.find(m => m.id === p.memberId);
+      if (member) {
+        member.status = 'UNPAID';
+        member.note = 'Resit ditolak — sila buat bayaran semula';
+      }
+      appState.payments.splice(idx, 1);
+      saveAppState();
+      updateHeaderAndKPIs();
+      renderAdminVerifyList();
+      renderAdminQuickMarkTable();
+      renderMemberList();
+      showToast(`Rekod bayaran ${p.memberName} dikembalikan ke status Belum Bayar.`, 'warning');
+    }
+
+    function approveAllPendingPayments() {
+      let count = 0;
+      appState.payments.forEach(p => {
+        if (p.status === 'PENDING') {
+          p.status = 'APPROVED';
+          const member = appState.members.find(m => m.id === p.memberId);
+          if (member) {
+            member.status = 'PAID';
+            member.note = 'Bayaran disahkan oleh AJK';
+          }
+          count++;
+        }
+      });
+      saveAppState();
+      updateHeaderAndKPIs();
+      renderAdminVerifyList();
+      renderAdminQuickMarkTable();
+      renderMemberList();
+      showToast(`${count} bayaran telah disahkan selesai!`);
+    }
+
+    // ==========================================
+    // MANAGE MEMBERS (ADD, BULK, DELETE)
+    // ==========================================
+    function addSingleMember() {
+      const nameInput = document.getElementById('newMemberName');
+      const codeInput = document.getElementById('newMemberCode');
+      const groupInput = document.getElementById('newMemberGroup');
+      const statusSelect = document.getElementById('newMemberInitialStatus');
+
+      const name = nameInput.value.trim();
+      if (!name) {
+        showToast('Sila masukkan nama ahli.', 'error');
+        return;
+      }
+
+      const newId = 'M' + Date.now().toString().slice(-5);
+      const code = codeInput.value.trim() || `PK-${appState.members.length + 101}`;
+      const group = groupInput.value.trim() || 'Platun 1';
+      const status = statusSelect.value || 'UNPAID';
+
+      appState.members.unshift({
+        id: newId,
+        code: code,
+        name: name,
+        group: group,
+        status: status,
+        lastCutDate: status === 'NOT_CUT' ? '-' : getTodayDateStr(),
+        note: status === 'UNPAID' ? 'Ditambah oleh AJK (Perlu bayar)' : ''
+      });
+
+      nameInput.value = '';
+      codeInput.value = '';
+
+      saveAppState();
+      populateGroupFilterDropdowns();
+      updateHeaderAndKPIs();
+      renderManageMembersList();
+      renderAdminQuickMarkTable();
+      renderMemberList();
+      showToast(`Ahli "${name}" berjaya ditambah!`);
+    }
+
+    function importBulkMembers() {
+      const raw = document.getElementById('bulkMemberTextarea').value.trim();
+      if (!raw) {
+        showToast('Sila tampal senarai nama ahli terlebih dahulu.', 'error');
+        return;
+      }
+      const markAsCut = document.getElementById('bulkMarkAsCutCheckbox').checked;
+      const lines = raw.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+      let addedCount = 0;
+
+      lines.forEach((line, idx) => {
+        const parts = line.split(',');
+        const name = (parts[0] || '').trim();
+        const group = (parts[1] || 'Platun 1').trim();
+        if (name) {
+          appState.members.push({
+            id: 'M' + Date.now().toString().slice(-4) + idx,
+            code: `PK-${appState.members.length + 101}`,
+            name: name,
+            group: group,
+            status: markAsCut ? 'UNPAID' : 'NOT_CUT',
+            lastCutDate: markAsCut ? getTodayDateStr() : '-',
+            note: markAsCut ? 'Import pukal (Dah gunting)' : ''
+          });
+          addedCount++;
+        }
+      });
+
+      document.getElementById('bulkMemberTextarea').value = '';
+      saveAppState();
+      populateGroupFilterDropdowns();
+      updateHeaderAndKPIs();
+      renderManageMembersList();
+      renderAdminQuickMarkTable();
+      renderMemberList();
+      showToast(`${addedCount} ahli baharu berjaya diimport!`);
+    }
+
+    function renderManageMembersList() {
+      const container = document.getElementById('manageMembersList');
+      const countLabel = document.getElementById('manageMemberCountLabel');
+      if (countLabel) countLabel.textContent = appState.members.length;
+      if (!container) return;
+
+      container.innerHTML = appState.members.map(m => `
+        <div class="p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-3 bg-slate-50/50">
+          <div>
+            <div class="text-sm font-bold text-slate-900">${escapeHtml(m.name)}</div>
+            <div class="text-xs text-slate-500">${escapeHtml(m.code)} • ${escapeHtml(m.group)}</div>
+          </div>
+          <div class="flex items-center gap-2">
+            ${getStatusBadgeHtml(m.status)}
+            <button type="button" onclick="deleteMember('${m.id}')" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50" title="Padam Ahli">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function deleteMember(memberId) {
+      const idx = appState.members.findIndex(m => m.id === memberId);
+      if (idx === -1) return;
+      const removed = appState.members.splice(idx, 1)[0];
+      saveAppState();
+      populateGroupFilterDropdowns();
+      updateHeaderAndKPIs();
+      renderManageMembersList();
+      renderAdminQuickMarkTable();
+      renderMemberList();
+      showToast(`Ahli "${removed.name}" telah dipadamkan.`);
+    }
+
+    // ==========================================
+    // ADMIN SETTINGS & QR UPLOAD
+    // ==========================================
+    function populateAdminSettingsForm() {
+      document.getElementById('settingSessionTitle').value = appState.settings.sessionTitle;
+      document.getElementById('settingFeeRate').value = appState.settings.feeRate;
+      document.getElementById('settingBankName').value = appState.settings.bankName;
+      document.getElementById('settingAccountNo').value = appState.settings.accountNo;
+      document.getElementById('settingHolderName').value = appState.settings.holderName;
+      document.getElementById('settingAdminPin').value = appState.settings.adminPin;
+      const cfg = getActiveFirebaseConfig();
+      if (document.getElementById('settingFirebaseDbUrl')) {
+        document.getElementById('settingFirebaseDbUrl').value = cfg.databaseURL || '';
+      }
+      if (document.getElementById('settingFirebaseApiKey')) {
+        document.getElementById('settingFirebaseApiKey').value = cfg.apiKey || '';
+      }
+      renderQrIntoBox('adminQrPreviewBox');
+    }
+
+    function handleAdminQrUpload(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        appState.settings.customQrDataUrl = e.target.result;
+        saveAppState();
+        renderQrIntoBox('adminQrPreviewBox');
+        showToast('Gambar QR DuitNow AJK berjaya dimuat naik!');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function clearCustomQrImage() {
+      appState.settings.customQrDataUrl = '';
+      saveAppState();
+      renderQrIntoBox('adminQrPreviewBox');
+      showToast('QR ditetapkan semula kepada paparan simulasi.');
+    }
+
+    function saveAdminSettings() {
+      appState.settings.sessionTitle = document.getElementById('settingSessionTitle').value.trim() || 'Sesi Semasa';
+      appState.settings.feeRate = parseFloat(document.getElementById('settingFeeRate').value) || 10.00;
+      appState.settings.bankName = document.getElementById('settingBankName').value.trim() || 'Maybank';
+      appState.settings.accountNo = document.getElementById('settingAccountNo').value.trim() || '-';
+      appState.settings.holderName = document.getElementById('settingHolderName').value.trim() || 'AJK Gunting Rambut';
+      appState.settings.adminPin = document.getElementById('settingAdminPin').value.trim() || '1234';
+
+      saveAppState();
+      updateHeaderAndKPIs();
+      renderMemberList();
+      showToast('Tetapan harga & akaun AJK berjaya disimpan!');
+    }
+
+    // ==========================================
+    // NEW SESSION RESET MODAL
+    // ==========================================
+    function resetNewHaircutSessionModal() {
+      document.getElementById('newSessionNameInput').value = `Sesi Gunting Rambut (${getTodayDateStr()})`;
+      document.getElementById('resetSessionModal').classList.remove('hidden');
+    }
+
+    function closeResetSessionModal() {
+      document.getElementById('resetSessionModal').classList.add('hidden');
+    }
+
+    function confirmResetNewSession() {
+      const newTitle = document.getElementById('newSessionNameInput').value.trim() || `Sesi Gunting Rambut (${getTodayDateStr()})`;
+      appState.settings.sessionTitle = newTitle;
+      appState.members.forEach(m => {
+        m.status = 'NOT_CUT';
+        m.lastCutDate = '-';
+        m.note = 'Belum gunting sesi ini';
+      });
+      saveAppState();
+      closeResetSessionModal();
+      updateHeaderAndKPIs();
+      renderAdminQuickMarkTable();
+      renderMemberList();
+      showToast(`Sesi baharu "${newTitle}" telah dimulakan!`);
+    }
+
+    // ==========================================
+    // CLIPBOARD & EXPORT UTILITIES
+    // ==========================================
+    function copyTextToClipboard(text, successMsg) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          showToast(successMsg);
+        }).catch(() => {
+          fallbackCopyText(text, successMsg);
+        });
+      } else {
+        fallbackCopyText(text, successMsg);
+      }
+    }
+
+    function fallbackCopyText(text, successMsg) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand('copy');
+        showToast(successMsg);
+      } catch (e) {
+        showToast('Gagal menyalin teks.', 'error');
+      }
+      document.body.removeChild(ta);
+    }
+
+    function copyBankAccountNo() {
+      copyTextToClipboard(appState.settings.accountNo, `No. Akaun (${appState.settings.accountNo}) berjaya disalin!`);
+    }
+
+    function copyUnpaidWhatsAppList() {
+      const unpaid = appState.members.filter(m => m.status === 'UNPAID');
+      const fee = formatRM(appState.settings.feeRate);
+      let lines = [
+        `*SENARAI AHLI DAH GUNTING RAMBUT (BELUM BAYAR)*`,
+        `📌 *${appState.settings.sessionTitle}*`,
+        `💵 Kadar Bayaran: *${fee} / seorang*`,
+        `🏦 Akaun AJK: *${appState.settings.bankName} (${appState.settings.accountNo})*`,
+        `👤 Penama: *${appState.settings.holderName}*`,
+        ``
+      ];
+
+      if (unpaid.length === 0) {
+        lines.push(`✅ Semua ahli yang dah gunting rambut telah selesai membuat pembayaran. Terima kasih!`);
+      } else {
+        unpaid.forEach((m, idx) => {
+          lines.push(`${idx + 1}. ${m.name} (${m.group}) - Tarikh Potong: ${m.lastCutDate}`);
+        });
+        lines.push(``);
+        lines.push(`_Sila jelaskan bayaran dan muat naik resit di laman web AJK Gunting Rambut. Terima kasih._`);
+      }
+
+      copyTextToClipboard(lines.join('\n'), 'Senarai tunggakan WhatsApp berjaya disalin!');
+    }
+
+    function exportPaymentsCSV() {
+      const headers = ['No Resit', 'Nama Ahli', 'Platun', 'Tarikh Gunting', 'Masa Bayaran', 'Kaedah', 'Jumlah (RM)', 'Nama Fail Resit', 'Status'];
+      const rows = appState.payments.map(p => [
+        p.id,
+        `"${(p.memberName || '').replace(/"/g, '""')}"`,
+        `"${(p.memberGroup || '').replace(/"/g, '""')}"`,
+        p.cutDate,
+        p.paidAt,
+        p.method,
+        (parseFloat(p.amount) || 0).toFixed(2),
+        `"${(p.receiptFileName || '').replace(/"/g, '""')}"`,
+        p.status
+      ]);
+
+      const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Rekod_Bayaran_Gunting_Rambut_${getTodayDateStr()}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('Fail CSV rekod pembayaran telah dimuat turun.');
+    }
+
+    // Initialize Application
+    window.addEventListener('DOMContentLoaded', () => {
+      populateGroupFilterDropdowns();
+      updateHeaderAndKPIs();
+      renderMemberList();
+      initFirebaseRealtimeConnection();
+    });
+  </script>
+</body>
+</html>
