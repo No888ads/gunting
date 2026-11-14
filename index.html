@@ -264,6 +264,9 @@
               </svg>
               <span>Eksport CSV</span>
             </button>
+            <button type="button" onclick="requestDeleteAllHistory()" class="px-3.5 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-semibold flex items-center gap-1.5 shrink-0" title="Kuasa Khas AJK Sahaja">
+              <span>🗑️ Padam Semua Sejarah (AJK)</span>
+            </button>
           </div>
         </div>
 
@@ -312,6 +315,51 @@
 
       <!-- Unlocked Admin Content -->
       <div id="adminDashboardContent" class="hidden space-y-6">
+
+        <!-- AJK Exclusive Quick ON/OFF Payment Method Control Bar -->
+        <div class="bg-slate-900 text-white rounded-2xl p-4 sm:p-5 border border-slate-800 shadow-md space-y-3">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 rounded border border-emerald-500/30">Kuasa Eksklusif AJK Sahaja</span>
+              <h3 class="text-sm sm:text-base font-bold mt-1">Kawalan ON / OFF Pilihan Pembayaran Anggota</h3>
+              <p class="text-xs text-slate-400">Hanya AJK boleh menentukan sama ada anggota dibenarkan membayar menggunakan QR DuitNow sahaja atau turut membuka Online Banking (FPX), Kad, &amp; Apple Pay.</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
+            <button type="button" id="ajkQuickToggleQr" onclick="ajkToggleChannelDirect('enableQr')" class="p-3 rounded-xl border text-left transition flex items-center justify-between gap-2">
+              <div>
+                <div class="text-xs font-bold">📱 QR DuitNow</div>
+                <div class="text-[10px] opacity-80" id="ajkQuickStatusQr">AKTIF (ON)</div>
+              </div>
+              <span id="ajkQuickPillQr" class="px-2 py-0.5 text-[10px] font-extrabold rounded-full">ON</span>
+            </button>
+
+            <button type="button" id="ajkQuickToggleFpx" onclick="ajkToggleChannelDirect('enableFpx')" class="p-3 rounded-xl border text-left transition flex items-center justify-between gap-2">
+              <div>
+                <div class="text-xs font-bold">🏦 Online Banking</div>
+                <div class="text-[10px] opacity-80" id="ajkQuickStatusFpx">DIMATIKAN (OFF)</div>
+              </div>
+              <span id="ajkQuickPillFpx" class="px-2 py-0.5 text-[10px] font-extrabold rounded-full">OFF</span>
+            </button>
+
+            <button type="button" id="ajkQuickToggleCard" onclick="ajkToggleChannelDirect('enableCard')" class="p-3 rounded-xl border text-left transition flex items-center justify-between gap-2">
+              <div>
+                <div class="text-xs font-bold">💳 Kad Kredit/Debit</div>
+                <div class="text-[10px] opacity-80" id="ajkQuickStatusCard">DIMATIKAN (OFF)</div>
+              </div>
+              <span id="ajkQuickPillCard" class="px-2 py-0.5 text-[10px] font-extrabold rounded-full">OFF</span>
+            </button>
+
+            <button type="button" id="ajkQuickToggleApplePay" onclick="ajkToggleChannelDirect('enableApplePay')" class="p-3 rounded-xl border text-left transition flex items-center justify-between gap-2">
+              <div>
+                <div class="text-xs font-bold">🍎 Apple Pay</div>
+                <div class="text-[10px] opacity-80" id="ajkQuickStatusApplePay">DIMATIKAN (OFF)</div>
+              </div>
+              <span id="ajkQuickPillApplePay" class="px-2 py-0.5 text-[10px] font-extrabold rounded-full">OFF</span>
+            </button>
+          </div>
+        </div>
 
         <!-- Admin Sub-navigation Bar -->
         <div class="bg-white rounded-2xl p-3 border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-2">
@@ -513,7 +561,7 @@
 
               <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col items-center justify-center text-center">
                 <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-2">Pratonton QR DuitNow Semasa</span>
-                <div id="adminQrPreviewBox" class="w-40 h-40 bg-white p-2 rounded-xl border border-slate-200 flex items-center justify-center overflow-hidden"></div>
+                <div id="adminQrPreviewBox" class="w-56 h-56 bg-white p-3 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-center overflow-hidden"></div>
                 <button type="button" onclick="clearCustomQrImage()" class="mt-2 text-xs text-rose-600 hover:underline">Tetapkan Semula ke QR Simulasi</button>
               </div>
 
@@ -522,6 +570,49 @@
                   Simpan Tetapan AJK
                 </button>
               </div>
+            </div>
+          </div>
+
+          <!-- ON/OFF Payment Method Toggles Section -->
+          <div class="pt-6 border-t border-slate-200 space-y-4">
+            <div>
+              <span class="px-2 py-0.5 text-[10px] font-bold uppercase bg-emerald-100 text-emerald-800 rounded">Kawalan Saluran Bayaran (ON / OFF)</span>
+              <h4 class="text-base font-bold text-slate-900 mt-1">Aktifkan / Matikan Pilihan Pembayaran Anggota</h4>
+              <p class="text-xs text-slate-500">Matikan saluran Online Banking (FPX), Kad Kredit/Debit, atau Apple Pay jika anda belum bersedia menggunakannya. Saluran yang dimatikan (OFF) akan disembunyikan daripada borang bayaran anggota.</p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <label class="p-3.5 rounded-2xl border border-slate-200 bg-slate-50 flex items-center justify-between gap-3 cursor-pointer hover:bg-slate-100/70 transition">
+                <div>
+                  <div class="text-xs font-bold text-slate-900">📱 QR DuitNow</div>
+                  <div class="text-[11px] text-emerald-700 font-medium">Disyorkan Sentiasa ON</div>
+                </div>
+                <input type="checkbox" id="toggleEnableQr" checked onchange="onTogglePaymentChannel()" class="w-5 h-5 rounded text-emerald-600 focus:ring-emerald-500" />
+              </label>
+
+              <label class="p-3.5 rounded-2xl border border-slate-200 bg-slate-50 flex items-center justify-between gap-3 cursor-pointer hover:bg-slate-100/70 transition">
+                <div>
+                  <div class="text-xs font-bold text-slate-900">🏦 Online Banking (FPX)</div>
+                  <div class="text-[11px] text-slate-500">toyyibPay FPX</div>
+                </div>
+                <input type="checkbox" id="toggleEnableFpx" onchange="onTogglePaymentChannel()" class="w-5 h-5 rounded text-emerald-600 focus:ring-emerald-500" />
+              </label>
+
+              <label class="p-3.5 rounded-2xl border border-slate-200 bg-slate-50 flex items-center justify-between gap-3 cursor-pointer hover:bg-slate-100/70 transition">
+                <div>
+                  <div class="text-xs font-bold text-slate-900">💳 Kad Kredit / Debit</div>
+                  <div class="text-[11px] text-slate-500">Visa / Mastercard</div>
+                </div>
+                <input type="checkbox" id="toggleEnableCard" onchange="onTogglePaymentChannel()" class="w-5 h-5 rounded text-emerald-600 focus:ring-emerald-500" />
+              </label>
+
+              <label class="p-3.5 rounded-2xl border border-slate-200 bg-slate-50 flex items-center justify-between gap-3 cursor-pointer hover:bg-slate-100/70 transition">
+                <div>
+                  <div class="text-xs font-bold text-slate-900">🍎 Apple Pay ( Pay)</div>
+                  <div class="text-[11px] text-slate-500">Dompet iOS</div>
+                </div>
+                <input type="checkbox" id="toggleEnableApplePay" onchange="onTogglePaymentChannel()" class="w-5 h-5 rounded text-emerald-600 focus:ring-emerald-500" />
+              </label>
             </div>
           </div>
 
@@ -661,24 +752,33 @@
           </div>
         </div>
 
-        <!-- QR & Bank Details Box -->
-        <div id="payModalQrSection" class="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
-          <div class="flex flex-col sm:flex-row items-center gap-4">
-            <div id="payModalQrBox" class="w-36 h-36 bg-white p-2 rounded-xl border border-slate-200 shrink-0 flex items-center justify-center"></div>
-            <div class="space-y-1.5 text-center sm:text-left flex-1">
-              <span class="px-2 py-0.5 text-[10px] font-bold bg-pink-100 text-pink-700 rounded-md uppercase">DuitNow QR / Pindahan Bank</span>
-              <p class="text-sm font-bold text-slate-900" id="payModalBankName">Maybank</p>
-              <div class="flex items-center justify-center sm:justify-start gap-2">
-                <p class="text-base font-mono font-bold text-emerald-700" id="payModalAccountNo">162106789012</p>
-                <button type="button" onclick="copyBankAccountNo()" class="px-2 py-0.5 text-[11px] font-semibold bg-white border border-slate-300 rounded-md hover:bg-slate-100">Salin</button>
-              </div>
-              <p class="text-xs text-slate-600" id="payModalHolderName">Penama: NOEL ETHAN ANAK RABIN (AJK)</p>
-              <div class="mt-2 p-2 rounded-lg bg-amber-50 border border-amber-200 text-left">
-                <div class="text-[10px] font-bold uppercase text-amber-800">Langkah 1: Wajib Letak Rujukan Ini Di Bank/QR</div>
-                <div class="flex items-center justify-between gap-2 mt-0.5">
-                  <code class="text-xs font-mono font-bold text-slate-900" id="payModalRefHint">GR01-3018733</code>
-                  <button type="button" onclick="copyMandatoryReference()" class="px-2 py-0.5 text-[10px] font-semibold bg-amber-200/80 hover:bg-amber-300 text-amber-950 rounded">Salin Rujukan</button>
-                </div>
+        <!-- QR & Bank Details Box (ENLARGED FOR EASY SCANNING) -->
+        <div id="payModalQrSection" class="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-4">
+          <div class="flex flex-col items-center gap-3">
+            <span class="px-3 py-1 text-xs font-extrabold bg-pink-600 text-white rounded-full uppercase tracking-wide shadow-2xs">Imbas Kod QR DuitNow Di Bawah</span>
+            <div id="payModalQrBox" onclick="toggleQrZoomModal()" title="Klik untuk besarkan" class="w-64 h-64 sm:w-72 sm:h-72 bg-white p-3 rounded-2xl border-2 border-pink-500/40 shadow-md shrink-0 flex items-center justify-center cursor-pointer transition hover:scale-[1.01]"></div>
+            <div class="flex flex-wrap items-center justify-center gap-2">
+              <button type="button" onclick="toggleQrZoomModal()" class="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold flex items-center gap-1.5 shadow-2xs">
+                <span>🔍 Besarkan QR Skrin Penuh</span>
+              </button>
+              <button type="button" onclick="downloadQrImageForScan()" class="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-100 text-slate-800 border border-slate-300 text-xs font-semibold flex items-center gap-1.5">
+                <span>⬇️ Simpan Gambar QR</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="space-y-2 text-center bg-white p-3.5 rounded-xl border border-slate-200">
+            <p class="text-sm font-bold text-slate-900" id="payModalBankName">Maybank</p>
+            <div class="flex items-center justify-center gap-2">
+              <p class="text-base font-mono font-bold text-emerald-700" id="payModalAccountNo">162106789012</p>
+              <button type="button" onclick="copyBankAccountNo()" class="px-2.5 py-0.5 text-[11px] font-semibold bg-slate-100 border border-slate-300 rounded-md hover:bg-slate-200">Salin</button>
+            </div>
+            <p class="text-xs text-slate-600" id="payModalHolderName">Penama: NOEL ETHAN ANAK RABIN (AJK)</p>
+            <div class="mt-2 p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-left">
+              <div class="text-[10px] font-bold uppercase text-amber-800">Langkah 1: Wajib Letak Rujukan Ini Di Bank/QR</div>
+              <div class="flex items-center justify-between gap-2 mt-1">
+                <code class="text-xs sm:text-sm font-mono font-bold text-slate-900" id="payModalRefHint">GR01-3018733</code>
+                <button type="button" onclick="copyMandatoryReference()" class="px-2.5 py-1 text-[11px] font-semibold bg-amber-200/80 hover:bg-amber-300 text-amber-950 rounded-lg">Salin Rujukan</button>
               </div>
             </div>
           </div>
@@ -847,6 +947,43 @@
     </div>
   </div>
 
+  <!-- MODAL: FULLSCREEN QR ZOOM FOR EASY SCANNING -->
+  <div id="qrZoomModal" onclick="toggleQrZoomModal()" class="fixed inset-0 z-50 hidden bg-slate-950/85 backdrop-blur-xs flex items-center justify-center p-4">
+    <div onclick="event.stopPropagation()" class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-200 text-center space-y-4 animate-slide-up">
+      <div class="flex items-center justify-between">
+        <span class="px-3 py-1 text-xs font-extrabold bg-pink-600 text-white rounded-full uppercase">DuitNow QR AJK</span>
+        <button type="button" onclick="toggleQrZoomModal()" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100">✕</button>
+      </div>
+      <div id="qrZoomBox" class="w-72 h-72 sm:w-80 sm:h-80 mx-auto bg-white p-3 rounded-2xl border-2 border-pink-500/40 flex items-center justify-center overflow-hidden"></div>
+      <p class="text-xs font-bold text-slate-800" id="qrZoomHolderLabel">NOEL ETHAN ANAK RABIN</p>
+      <button type="button" onclick="toggleQrZoomModal()" class="w-full py-2.5 rounded-xl bg-slate-900 text-white text-xs font-bold">Tutup Paparan Penuh</button>
+    </div>
+  </div>
+
+  <!-- MODAL: AJK DELETE PAYMENT HISTORY CONFIRMATION -->
+  <div id="deleteHistoryModal" class="fixed inset-0 z-50 hidden bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-200 space-y-4 animate-slide-up">
+      <div class="flex items-center justify-between">
+        <span class="px-2.5 py-0.5 text-[10px] font-bold uppercase bg-rose-100 text-rose-800 rounded-full">Kuasa Khas AJK</span>
+        <button type="button" onclick="closeDeleteHistoryModal()" class="p-1 rounded-lg text-slate-400 hover:text-slate-600">✕</button>
+      </div>
+      <div>
+        <h3 class="text-base font-bold text-slate-900" id="deleteHistoryModalTitle">Padam Rekod Pembayaran?</h3>
+        <p class="text-xs text-slate-600 mt-1 leading-relaxed" id="deleteHistoryModalDesc">
+          Memadam rekod bayaran ini akan mengembalikan status anggota tersebut kepada <strong>"Belum Bayar"</strong> dan menolak jumlah kutipan terkumpul secara automatik.
+        </p>
+      </div>
+      <div id="deleteHistoryPinWrapper" class="space-y-1">
+        <label class="block text-xs font-semibold text-slate-700">Sahkan Kata Laluan / PIN AJK</label>
+        <input type="password" id="deleteHistoryPinInput" onkeydown="if(event.key==='Enter') confirmDeleteHistoryAction()" placeholder="Masukkan PIN AJK" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-rose-500" />
+      </div>
+      <div class="flex items-center justify-end gap-2 pt-2">
+        <button type="button" onclick="closeDeleteHistoryModal()" class="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 text-xs font-semibold">Batal</button>
+        <button type="button" onclick="confirmDeleteHistoryAction()" class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold">🗑️ Sahkan Padam</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ========================================================= -->
   <!-- MODAL: CONFIRM NEW SESSION RESET                          -->
   <!-- ========================================================= -->
@@ -893,7 +1030,7 @@
 
   <!-- Application Logic -->
   <script>
-    const STORAGE_KEY = 'EGUNTING_AJK_STATE_V9';
+    const STORAGE_KEY = 'EGUNTING_AJK_STATE_V10';
     const FIREBASE_CONFIG_STORAGE_KEY = 'EGUNTING_FIREBASE_CONFIG_V1';
 
     // ============================================================================
@@ -926,7 +1063,11 @@
         firebaseDbUrl: 'https://lucky-draw-66c24-default-rtdb.asia-southeast1.firebasedatabase.app',
         toyyibSecretKey: 'yft6l59f-fysj-q01f-ws65-k2cn2rphxfxl',
         toyyibCategoryCode: 'xbpqjx3r',
-        toyyibDirectBillUrl: ''
+        toyyibDirectBillUrl: '',
+        enableQr: true,
+        enableFpx: false,
+        enableCard: false,
+        enableApplePay: false
       },
       adminUnlocked: false,
       selectedPaymentMethod: 'QR_DUITNOW',
@@ -1188,10 +1329,12 @@
       appState.activeSessionId = found.id;
       loadActiveSessionIntoCurrentView();
       saveAppState();
+      applyPaymentChannelVisibility();
       updateHeaderAndKPIs();
       renderMemberList();
       renderHistoryList();
       if (appState.adminUnlocked) {
+        renderAjkQuickChannelToggles();
         renderAdminQuickMarkTable();
         renderAdminVerifyList();
         renderManageMembersList();
@@ -1230,7 +1373,11 @@
           firebaseApiKey: appState.settings.firebaseApiKey || '',
           toyyibSecretKey: appState.settings.toyyibSecretKey || 'yft6l59f-fysj-q01f-ws65-k2cn2rphxfxl',
           toyyibCategoryCode: appState.settings.toyyibCategoryCode || 'xbpqjx3r',
-          toyyibDirectBillUrl: appState.settings.toyyibDirectBillUrl || ''
+          toyyibDirectBillUrl: appState.settings.toyyibDirectBillUrl || '',
+          enableQr: appState.settings.enableQr !== false,
+          enableFpx: Boolean(appState.settings.enableFpx),
+          enableCard: Boolean(appState.settings.enableCard),
+          enableApplePay: Boolean(appState.settings.enableApplePay)
         },
         members: appState.members || [],
         payments: appState.payments || []
@@ -1505,16 +1652,28 @@
     }
 
     function updateHeaderAndKPIs() {
-      const fee = parseFloat(appState.settings.feeRate) || 10;
+      const fee = parseFloat(appState.settings.feeRate) || 8;
       const unpaidMembers = appState.members.filter(m => m.status === 'UNPAID');
-      const pendingPayments = appState.payments.filter(p => p.status === 'PENDING');
-      const approvedPayments = appState.payments.filter(p => p.status === 'APPROVED');
+      const paidMembers = appState.members.filter(m => m.status === 'PAID');
+      const paidMemberIds = new Set(paidMembers.map(m => m.id));
 
-      const totalCollected = approvedPayments.reduce((acc, p) => acc + (parseFloat(p.amount) || 0), 0);
+      // Keep approved payments strictly synchronized with members whose current status is PAID
+      const pendingPayments = appState.payments.filter(p => p.status === 'PENDING');
+      const validApprovedPayments = appState.payments.filter(p => p.status === 'APPROVED' && paidMemberIds.has(p.memberId));
+
+      // Calculate total collected directly from PAID members so changing a member back to Belum Bayar ALWAYS reduces the amount immediately!
+      const totalCollected = paidMembers.reduce((sum, m) => {
+        const rec = validApprovedPayments.find(p => p.memberId === m.id);
+        return sum + (rec ? (parseFloat(rec.amount) || fee) : fee);
+      }, 0);
       const totalPending = pendingPayments.reduce((acc, p) => acc + (parseFloat(p.amount) || 0), 0);
       const totalUnpaidAmount = unpaidMembers.length * fee;
 
-      document.getElementById('headerFeeBadge').textContent = `${formatRM(fee)} / Potong (QR Sahaja)`;
+      const activeChannels = ['QR'];
+      if (appState.settings.enableFpx) activeChannels.push('FPX');
+      if (appState.settings.enableCard) activeChannels.push('Kad');
+      if (appState.settings.enableApplePay) activeChannels.push('Pay');
+      document.getElementById('headerFeeBadge').textContent = `${formatRM(fee)} • ${activeChannels.join(' / ')}`;
       document.getElementById('bannerFeeText').textContent = formatRM(fee);
       document.getElementById('statTotalMembers').textContent = `${appState.members.length} Ahli`;
       document.getElementById('statActiveSessionLabel').textContent = appState.settings.sessionTitle;
@@ -1526,7 +1685,7 @@
       document.getElementById('statPendingAmount').textContent = `Jumlah: ${formatRM(totalPending)}`;
 
       document.getElementById('statCollectedAmount').textContent = formatRM(totalCollected);
-      document.getElementById('statPaidCount').textContent = `${approvedPayments.length} Bayaran Selesai`;
+      document.getElementById('statPaidCount').textContent = `${paidMembers.length} Bayaran Selesai`;
       document.getElementById('footerSessionInfo').textContent = `Sesi Semasa: ${appState.settings.sessionTitle}`;
 
       const badge = document.getElementById('pendingVerifyBadge');
@@ -1728,7 +1887,12 @@
       if (document.getElementById('cardCvvInput')) document.getElementById('cardCvvInput').value = '';
 
       renderQrIntoBox('payModalQrBox');
-      selectPaymentMethod('QR_DUITNOW');
+      applyPaymentChannelVisibility();
+      const defaultMethod = (appState.settings.enableQr !== false) ? 'QR_DUITNOW'
+        : appState.settings.enableFpx ? 'FPX_ONLINE'
+        : appState.settings.enableCard ? 'CREDIT_CARD'
+        : appState.settings.enableApplePay ? 'APPLE_PAY' : 'QR_DUITNOW';
+      selectPaymentMethod(defaultMethod);
       updateAutoReceiptFilenamePreview();
 
       document.body.classList.add('overflow-hidden');
@@ -1753,6 +1917,22 @@
     }
 
     function selectPaymentMethod(method) {
+      if (method === 'FPX_ONLINE' && !appState.settings.enableFpx) {
+        showToast('Pembayaran Online Banking (FPX) kini dimatikan oleh AJK.', 'warning');
+        return;
+      }
+      if (method === 'CREDIT_CARD' && !appState.settings.enableCard) {
+        showToast('Pembayaran Kad Kredit/Debit kini dimatikan oleh AJK.', 'warning');
+        return;
+      }
+      if (method === 'APPLE_PAY' && !appState.settings.enableApplePay) {
+        showToast('Pembayaran Apple Pay kini dimatikan oleh AJK.', 'warning');
+        return;
+      }
+      if (method === 'QR_DUITNOW' && appState.settings.enableQr === false) {
+        showToast('Pembayaran QR DuitNow kini dimatikan oleh AJK.', 'warning');
+        return;
+      }
       appState.selectedPaymentMethod = method;
       const btnMap = {
         QR_DUITNOW: document.getElementById('payMethodBtnQR'),
@@ -2522,9 +2702,14 @@
             <td class="py-3 px-4 font-bold text-slate-900 whitespace-nowrap">${formatRM(p.amount)}</td>
             <td class="py-3 px-4 whitespace-nowrap">${statusBadge}</td>
             <td class="py-3 px-4 text-right whitespace-nowrap">
-              <button type="button" onclick="openReceiptViewer('${p.id}')" class="px-2.5 py-1 rounded-lg border border-slate-200 hover:bg-slate-100 text-xs font-semibold text-slate-700">
-                Lihat Resit
-              </button>
+              <div class="inline-flex items-center justify-end gap-1.5">
+                <button type="button" onclick="openReceiptViewer('${p.id}')" class="px-2.5 py-1 rounded-lg border border-slate-200 hover:bg-slate-100 text-xs font-semibold text-slate-700">
+                  Lihat Resit
+                </button>
+                <button type="button" onclick="requestDeleteSinglePayment('${p.id}')" class="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-semibold transition" title="Padam Rekod (AJK Sahaja)">
+                  🗑️ Padam
+                </button>
+              </div>
             </td>
           </tr>
         `;
@@ -2691,10 +2876,14 @@
       const m = appState.members.find(item => item.id === memberId);
       if (!m) return;
       m.status = newStatus;
+      if (newStatus === 'UNPAID' || newStatus === 'NOT_CUT') {
+        // Remove previous payment record for this member in the active session so Selesai Bayar (Terkumpul) decreases accurately
+        appState.payments = appState.payments.filter(p => p.memberId !== memberId);
+      }
       if (newStatus === 'UNPAID') {
         m.lastCutDate = getTodayDateStr();
-        m.note = 'Ditandakan sudah gunting oleh AJK';
-        showToast(`${m.name} ditandakan "Dah Gunting — Perlu Buat Bayaran".`);
+        m.note = 'Ditandakan belum bayar oleh AJK';
+        showToast(`${m.name} ditetapkan kepada "Belum Bayar" (Jumlah terkumpul dikemaskini).`);
       } else if (newStatus === 'NOT_CUT') {
         m.lastCutDate = '-';
         m.note = 'Belum gunting sesi ini';
@@ -2704,6 +2893,7 @@
       updateHeaderAndKPIs();
       renderAdminQuickMarkTable();
       renderMemberList();
+      renderHistoryList();
     }
 
     function adminMarkCashPaid(memberId) {
@@ -2991,6 +3181,228 @@
     // ==========================================
     // ADMIN SETTINGS & QR UPLOAD
     // ==========================================
+    function renderAjkQuickChannelToggles() {
+      const items = [
+        { key: 'enableQr', btnId: 'ajkQuickToggleQr', statusId: 'ajkQuickStatusQr', pillId: 'ajkQuickPillQr', enabled: appState.settings.enableQr !== false },
+        { key: 'enableFpx', btnId: 'ajkQuickToggleFpx', statusId: 'ajkQuickStatusFpx', pillId: 'ajkQuickPillFpx', enabled: Boolean(appState.settings.enableFpx) },
+        { key: 'enableCard', btnId: 'ajkQuickToggleCard', statusId: 'ajkQuickStatusCard', pillId: 'ajkQuickPillCard', enabled: Boolean(appState.settings.enableCard) },
+        { key: 'enableApplePay', btnId: 'ajkQuickToggleApplePay', statusId: 'ajkQuickStatusApplePay', pillId: 'ajkQuickPillApplePay', enabled: Boolean(appState.settings.enableApplePay) }
+      ];
+      items.forEach(item => {
+        const btn = document.getElementById(item.btnId);
+        const st = document.getElementById(item.statusId);
+        const pill = document.getElementById(item.pillId);
+        if (!btn || !st || !pill) return;
+        if (item.enabled) {
+          btn.className = 'p-3 rounded-xl border-2 border-emerald-500 bg-emerald-950/60 text-white text-left transition flex items-center justify-between gap-2';
+          st.textContent = 'DIBUKA KEPADA ANGGOTA';
+          pill.textContent = 'ON';
+          pill.className = 'px-2.5 py-0.5 text-[10px] font-extrabold rounded-full bg-emerald-500 text-slate-950';
+        } else {
+          btn.className = 'p-3 rounded-xl border border-slate-700 bg-slate-800/70 text-slate-400 text-left transition flex items-center justify-between gap-2 hover:border-slate-600';
+          st.textContent = 'DIKUNCI OLEH AJK';
+          pill.textContent = 'OFF';
+          pill.className = 'px-2.5 py-0.5 text-[10px] font-extrabold rounded-full bg-slate-700 text-slate-300';
+        }
+      });
+    }
+
+    function ajkToggleChannelDirect(settingKey) {
+      if (!appState.adminUnlocked) {
+        showToast('Akses ditolak: Hanya AJK yang log masuk boleh mengubah tetapan saluran bayaran!', 'error');
+        return;
+      }
+      const nextVal = !(settingKey === 'enableQr' ? (appState.settings.enableQr !== false) : Boolean(appState.settings[settingKey]));
+      appState.settings[settingKey] = nextVal;
+
+      // Ensure at least one payment method remains enabled
+      if (!appState.settings.enableQr && !appState.settings.enableFpx && !appState.settings.enableCard && !appState.settings.enableApplePay) {
+        appState.settings.enableQr = true;
+        showToast('Sekurang-kurangnya satu kaedah pembayaran mesti dibuka (QR DuitNow diaktifkan).', 'warning');
+      }
+
+      if (document.getElementById('toggleEnableQr')) document.getElementById('toggleEnableQr').checked = appState.settings.enableQr !== false;
+      if (document.getElementById('toggleEnableFpx')) document.getElementById('toggleEnableFpx').checked = Boolean(appState.settings.enableFpx);
+      if (document.getElementById('toggleEnableCard')) document.getElementById('toggleEnableCard').checked = Boolean(appState.settings.enableCard);
+      if (document.getElementById('toggleEnableApplePay')) document.getElementById('toggleEnableApplePay').checked = Boolean(appState.settings.enableApplePay);
+
+      saveAppState();
+      applyPaymentChannelVisibility();
+      updateHeaderAndKPIs();
+      showToast('Status ON/OFF saluran pembayaran anggota telah dikemaskini oleh AJK!');
+    }
+
+    let pendingDeleteHistoryTarget = null; // 'ALL' or paymentId
+
+    function requestDeleteSinglePayment(paymentId) {
+      const p = appState.payments.find(item => item.id === paymentId);
+      if (!p) return;
+      pendingDeleteHistoryTarget = paymentId;
+      document.getElementById('deleteHistoryModalTitle').textContent = `Padam Rekod Bayaran ${p.id}?`;
+      document.getElementById('deleteHistoryModalDesc').innerHTML = `Anda akan memadam rekod bayaran <strong>${escapeHtml(p.memberName)} (${formatRM(p.amount)})</strong>. Status anggota ini akan dikembalikan kepada <strong>"Belum Bayar"</strong> dan jumlah terkumpul akan ditolak secara automatik.`;
+      const pinWrap = document.getElementById('deleteHistoryPinWrapper');
+      const pinInput = document.getElementById('deleteHistoryPinInput');
+      if (appState.adminUnlocked) {
+        pinWrap.classList.add('hidden');
+      } else {
+        pinWrap.classList.remove('hidden');
+        if (pinInput) pinInput.value = '';
+      }
+      document.getElementById('deleteHistoryModal').classList.remove('hidden');
+    }
+
+    function requestDeleteAllHistory() {
+      if (appState.payments.length === 0) {
+        showToast('Tiada rekod sejarah pembayaran untuk dipadamkan.', 'warning');
+        return;
+      }
+      pendingDeleteHistoryTarget = 'ALL';
+      document.getElementById('deleteHistoryModalTitle').textContent = `Padam Semua Sejarah Bayaran (${appState.payments.length} Rekod)?`;
+      document.getElementById('deleteHistoryModalDesc').innerHTML = `Tindakan ini akan memadamkan kesemua <strong>${appState.payments.length} rekod pembayaran</strong> bagi sesi semasa dan menetapkan semula semua anggota kepada <strong>"Belum Bayar"</strong>.`;
+      const pinWrap = document.getElementById('deleteHistoryPinWrapper');
+      const pinInput = document.getElementById('deleteHistoryPinInput');
+      if (appState.adminUnlocked) {
+        pinWrap.classList.add('hidden');
+      } else {
+        pinWrap.classList.remove('hidden');
+        if (pinInput) pinInput.value = '';
+      }
+      document.getElementById('deleteHistoryModal').classList.remove('hidden');
+    }
+
+    function closeDeleteHistoryModal() {
+      pendingDeleteHistoryTarget = null;
+      document.getElementById('deleteHistoryModal').classList.add('hidden');
+    }
+
+    function confirmDeleteHistoryAction() {
+      if (!appState.adminUnlocked) {
+        const enteredPin = (document.getElementById('deleteHistoryPinInput')?.value || '').trim();
+        if (enteredPin !== appState.settings.adminPin) {
+          showToast('Kata laluan / PIN AJK tidak sah! Hanya AJK mempunyai kuasa memadam sejarah bayaran.', 'error');
+          return;
+        }
+      }
+
+      if (pendingDeleteHistoryTarget === 'ALL') {
+        appState.payments = [];
+        appState.members.forEach(m => {
+          if (m.status === 'PAID' || m.status === 'PENDING') {
+            m.status = 'UNPAID';
+            m.note = 'Perlu jelaskan bayaran gunting rambut';
+          }
+        });
+        showToast('Semua rekod sejarah pembayaran sesi ini telah dipadamkan oleh AJK.');
+      } else if (pendingDeleteHistoryTarget) {
+        const idx = appState.payments.findIndex(p => p.id === pendingDeleteHistoryTarget);
+        if (idx !== -1) {
+          const removed = appState.payments.splice(idx, 1)[0];
+          const member = appState.members.find(m => m.id === removed.memberId);
+          // If member has no other approved payment in this session, revert status to UNPAID
+          const stillHasPayment = appState.payments.some(p => p.memberId === removed.memberId && p.status === 'APPROVED');
+          if (member && !stillHasPayment) {
+            member.status = 'UNPAID';
+            member.note = 'Rekod bayaran dipadam oleh AJK — sila jelaskan bayaran';
+          }
+          showToast(`Rekod bayaran ${removed.id} (${removed.memberName}) telah dipadamkan oleh AJK.`);
+        }
+      }
+
+      closeDeleteHistoryModal();
+      saveAppState();
+      updateHeaderAndKPIs();
+      renderHistoryList();
+      renderMemberList();
+      if (appState.adminUnlocked) {
+        renderAdminQuickMarkTable();
+        renderAdminVerifyList();
+      }
+    }
+
+    function applyPaymentChannelVisibility() {
+      renderAjkQuickChannelToggles();
+      const qrEnabled = appState.settings.enableQr !== false;
+      const fpxEnabled = Boolean(appState.settings.enableFpx);
+      const cardEnabled = Boolean(appState.settings.enableCard);
+      const appleEnabled = Boolean(appState.settings.enableApplePay);
+
+      const qrBtn = document.getElementById('payMethodBtnQR');
+      const fpxBtn = document.getElementById('payMethodBtnFPX');
+      const cardBtn = document.getElementById('payMethodBtnCard');
+      const appleBtn = document.getElementById('payMethodBtnApplePay');
+
+      if (qrBtn) qrBtn.classList.toggle('hidden', !qrEnabled);
+      if (fpxBtn) fpxBtn.classList.toggle('hidden', !fpxEnabled);
+      if (cardBtn) cardBtn.classList.toggle('hidden', !cardEnabled);
+      if (appleBtn) appleBtn.classList.toggle('hidden', !appleEnabled);
+
+      const grid = qrBtn ? qrBtn.parentElement : null;
+      if (grid) {
+        const count = [qrEnabled, fpxEnabled, cardEnabled, appleEnabled].filter(Boolean).length;
+        grid.className = count <= 1
+          ? 'grid grid-cols-1 gap-2'
+          : count === 2
+            ? 'grid grid-cols-2 gap-2'
+            : count === 3
+              ? 'grid grid-cols-3 gap-2'
+              : 'grid grid-cols-2 sm:grid-cols-4 gap-2';
+      }
+    }
+
+    function onTogglePaymentChannel() {
+      if (!appState.adminUnlocked) {
+        showToast('Hanya AJK yang log masuk boleh mengubah suis ON/OFF pembayaran!', 'error');
+        return;
+      }
+      const qrChk = document.getElementById('toggleEnableQr');
+      const fpxChk = document.getElementById('toggleEnableFpx');
+      const cardChk = document.getElementById('toggleEnableCard');
+      const appleChk = document.getElementById('toggleEnableApplePay');
+
+      if (qrChk && !qrChk.checked && (!fpxChk || !fpxChk.checked) && (!cardChk || !cardChk.checked) && (!appleChk || !appleChk.checked)) {
+        qrChk.checked = true;
+        showToast('Sekurang-kurangnya satu kaedah pembayaran mesti diaktifkan (QR DuitNow).', 'warning');
+      }
+
+      appState.settings.enableQr = qrChk ? qrChk.checked : true;
+      appState.settings.enableFpx = fpxChk ? fpxChk.checked : false;
+      appState.settings.enableCard = cardChk ? cardChk.checked : false;
+      appState.settings.enableApplePay = appleChk ? appleChk.checked : false;
+
+      saveAppState();
+      applyPaymentChannelVisibility();
+      updateHeaderAndKPIs();
+      showToast('Tetapan saluran pembayaran (ON/OFF) telah dikemaskini!');
+    }
+
+    function toggleQrZoomModal() {
+      const modal = document.getElementById('qrZoomModal');
+      if (!modal) return;
+      if (modal.classList.contains('hidden')) {
+        renderQrIntoBox('qrZoomBox');
+        const lbl = document.getElementById('qrZoomHolderLabel');
+        if (lbl) lbl.textContent = appState.settings.holderName || 'AJK Gunting Rambut';
+        modal.classList.remove('hidden');
+      } else {
+        modal.classList.add('hidden');
+      }
+    }
+
+    function downloadQrImageForScan() {
+      if (appState.settings.customQrDataUrl) {
+        const a = document.createElement('a');
+        a.href = appState.settings.customQrDataUrl;
+        a.download = 'QR_DuitNow_AJK_Gunting_Rambut.png';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        showToast('Gambar QR DuitNow sedang dimuat turun.');
+      } else {
+        toggleQrZoomModal();
+        showToast('Sila muat naik QR sebenar anda di Panel AJK, atau tangkap skrin QR pada paparan penuh ini.');
+      }
+    }
+
     function populateAdminSettingsForm() {
       document.getElementById('settingSessionTitle').value = appState.settings.sessionTitle;
       document.getElementById('settingFeeRate').value = appState.settings.feeRate;
@@ -3014,6 +3426,10 @@
       if (document.getElementById('settingToyyibDirectBillUrl')) {
         document.getElementById('settingToyyibDirectBillUrl').value = appState.settings.toyyibDirectBillUrl || '';
       }
+      if (document.getElementById('toggleEnableQr')) document.getElementById('toggleEnableQr').checked = appState.settings.enableQr !== false;
+      if (document.getElementById('toggleEnableFpx')) document.getElementById('toggleEnableFpx').checked = Boolean(appState.settings.enableFpx);
+      if (document.getElementById('toggleEnableCard')) document.getElementById('toggleEnableCard').checked = Boolean(appState.settings.enableCard);
+      if (document.getElementById('toggleEnableApplePay')) document.getElementById('toggleEnableApplePay').checked = Boolean(appState.settings.enableApplePay);
       renderQrIntoBox('adminQrPreviewBox');
     }
 
@@ -3044,6 +3460,11 @@
       appState.settings.accountNo = document.getElementById('settingAccountNo').value.trim() || '-';
       appState.settings.holderName = document.getElementById('settingHolderName').value.trim() || 'AJK Gunting Rambut';
       appState.settings.adminPin = document.getElementById('settingAdminPin').value.trim() || '1234';
+      if (document.getElementById('toggleEnableQr')) appState.settings.enableQr = document.getElementById('toggleEnableQr').checked;
+      if (document.getElementById('toggleEnableFpx')) appState.settings.enableFpx = document.getElementById('toggleEnableFpx').checked;
+      if (document.getElementById('toggleEnableCard')) appState.settings.enableCard = document.getElementById('toggleEnableCard').checked;
+      if (document.getElementById('toggleEnableApplePay')) appState.settings.enableApplePay = document.getElementById('toggleEnableApplePay').checked;
+      applyPaymentChannelVisibility();
       if (document.getElementById('settingToyyibSecretKey')) {
         appState.settings.toyyibSecretKey = document.getElementById('settingToyyibSecretKey').value.trim() || 'yft6l59f-fysj-q01f-ws65-k2cn2rphxfxl';
       }
