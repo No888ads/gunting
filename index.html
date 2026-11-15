@@ -1212,6 +1212,27 @@
 
     let appState = loadAppState();
 
+    function safePersistLocalStorage(stateObj) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(stateObj));
+      } catch (quotaErr) {
+        // iOS Safari 5MB localStorage quota reached due to 26+ base64 receipt images -> store lightweight metadata in localStorage while keeping full images in memory & Firebase!
+        try {
+          const lightCopy = {
+            ...stateObj,
+            payments: (stateObj.payments || []).map(p => ({ ...p, receiptDataUrl: '' })),
+            sessions: (stateObj.sessions || []).map(s => ({
+              ...s,
+              payments: normalizeFirebaseArray(s.payments).map(p => ({ ...p, receiptDataUrl: '' }))
+            }))
+          };
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(lightCopy));
+        } catch (e2) {
+          console.warn('LocalStorage full:', e2);
+        }
+      }
+    }
+
     function loadAppState() {
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
@@ -1409,7 +1430,7 @@
       });
 
       (appState.members || []).forEach(m => {
-        // Guarantee: if an approved payment record exists for this member in this session, their status MUST be PAID!
+        // Guarantee 100% sync between Session Card count and Top KPI count:
         if (paidPaymentMap[m.id]) {
           const pRec = paidPaymentMap[m.id];
           m.status = 'PAID';
@@ -1417,7 +1438,10 @@
           m.note = (snap[m.id] && snap[m.id].note && snap[m.id].note.includes('Selesai'))
             ? snap[m.id].note
             : `✅ Selesai Bayar — ${pRec.method || 'QR DuitNow'} (Ref: ${pRec.bankRefNo || '-'})`;
-          if (snap[m.id]) snap[m.id].status = 'PAID';
+          if (!snap[m.id]) snap[m.id] = {};
+          snap[m.id].status = 'PAID';
+          snap[m.id].lastCutDate = m.lastCutDate;
+          snap[m.id].note = m.note;
         } else if (snap[m.id]) {
           m.status = snap[m.id].status || 'UNPAID';
           m.lastCutDate = snap[m.id].lastCutDate || activeSess.cutDate || '2026-11-14';
@@ -1668,7 +1692,7 @@
       appState.activeSessionId = found.id;
       loadActiveSessionIntoCurrentView();
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+        safePersistLocalStorage(appState);
       } catch (e) {}
       if (appState.adminUnlocked) {
         pushStateToFirebaseCloud();
@@ -1733,6 +1757,7 @@
       const remoteMembers = normalizeFirebaseArray(remoteData && remoteData.members);
       if (!remoteData || remoteMembers.length === 0) return;
       isApplyingRemoteUpdate = true;
+      let didAutoMergeSplitSession = false;
       try {
         if (remoteData.settings) {
           appState.settings = { ...appState.settings, ...remoteData.settings };
@@ -1741,7 +1766,6 @@
         appState.payments = normalizeFirebaseArray(remoteData.payments);
 
         let remoteSessions = normalizeFirebaseArray(remoteData.sessions);
-        let didAutoMergeSplitSession = false;
         if (remoteSessions.length > 0) {
           remoteSessions.forEach(s => {
             s.payments = normalizeFirebaseArray(s.payments);
@@ -1825,7 +1849,7 @@
           ensureMultiSessionStructure();
           renderSessionDropdownUI();
         }
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+        safePersistLocalStorage(appState);
         applyPaymentChannelVisibility();
         populateGroupFilterDropdowns();
         updateHeaderAndKPIs();
@@ -1973,7 +1997,7 @@
       renderSessionDropdownUI();
       appState.lastCloudTimestamp = Date.now();
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+        safePersistLocalStorage(appState);
       } catch (e) {
         console.warn('Failed to save state:', e);
       }
@@ -3171,7 +3195,7 @@
       renderSessionDropdownUI();
       appState.lastCloudTimestamp = Date.now();
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+        safePersistLocalStorage(appState);
       } catch (e) {}
 
       // Wait for Firebase Cloud write to finish before closing modal so refreshing the page never loses data!
