@@ -104,7 +104,7 @@
 
       <div class="flex flex-wrap items-center gap-2">
         <select id="activeSessionSelect" onchange="switchBiweeklySession(this.value)" class="flex-1 sm:flex-initial min-w-[230px] px-3.5 py-2 rounded-xl border-2 border-slate-900 bg-slate-50 text-xs sm:text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"></select>
-        <button type="button" onclick="openCreateNextBiweeklyModal()" class="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold flex items-center gap-1.5 shrink-0 transition">
+        <button type="button" id="publicNewSessionBtn" onclick="openCreateNextBiweeklyModal()" class="hidden px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold items-center gap-1.5 shrink-0 transition">
           <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
           </svg>
@@ -359,6 +359,28 @@
               <span id="ajkQuickPillApplePay" class="px-2 py-0.5 text-[10px] font-extrabold rounded-full">OFF</span>
             </button>
           </div>
+        </div>
+
+        <!-- AJK Exclusive Week / Session Lock & Unlock + Merge Manager -->
+        <div class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-sm space-y-4">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-100 pb-3.5">
+            <div>
+              <span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-indigo-100 text-indigo-800 rounded">Kawalan Minggu / Sesi (Khas AJK Sahaja)</span>
+              <h3 class="text-sm sm:text-base font-bold text-slate-900 mt-1">Urus Lock / Unlock Minggu &amp; Gabung Resit Tercicir</h3>
+              <p class="text-xs text-slate-500">Hanya AJK boleh membuka (*Unlock*) minggu baharu atau mengunci (*Lock*) minggu yang telah selesai / belum tiba masanya.</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2 shrink-0">
+              <button type="button" onclick="ajkMergeAllSessionsIntoFirst()" class="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-2xs transition flex items-center gap-1.5">
+                <span>🔄 Gabung Resit Minggu 1 &amp; 2 Ke Minggu 1 + Lock Minggu 2</span>
+              </button>
+              <button type="button" onclick="openCreateNextBiweeklyModal()" class="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition flex items-center gap-1.5">
+                <span>+ Tambah Minggu Baharu (+2 Minggu)</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- List of Sessions with Lock / Unlock & Set Active Controls -->
+          <div id="ajkSessionsManagerList" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
         </div>
 
         <!-- Admin Sub-navigation Bar -->
@@ -945,7 +967,7 @@
         <button type="button" onclick="closePaymentModal()" class="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-xs sm:text-sm font-semibold hover:bg-slate-50">
           Batal
         </button>
-        <button type="button" onclick="submitMemberPayment()" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-bold shadow-sm transition">
+        <button type="button" id="submitPaymentBtn" onclick="submitMemberPayment()" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-bold shadow-sm transition">
           Hantar Bayaran
         </button>
       </div>
@@ -1086,7 +1108,9 @@
     let firebaseAppInstance = null;
     let firebaseDbRef = null;
     let isApplyingRemoteUpdate = false;
+    let hasLoadedInitialCloudSnapshot = false;
     let restPollTimer = null;
+    const MY_CONFIRMED_PAYMENTS_KEY = 'EGUNTING_MY_CONFIRMED_PAYMENTS_V1';
 
     const DEFAULT_STATE = {
       settings: {
@@ -1269,7 +1293,6 @@
             note: m.note || 'Perlu jelaskan bayaran gunting rambut'
           };
         });
-        // Pre-create Sesi 1 (14 Nov 2026) and Sesi 2 (28 Nov 2026 - 2 weeks later) so user can switch immediately
         const s2Snap = {};
         (appState.members || []).forEach(m => {
           s2Snap[m.id] = {
@@ -1284,6 +1307,7 @@
             sessionNumber: 1,
             cutDate: '2026-11-14',
             title: 'Minggu 1 (14 Nov 2026)',
+            isLocked: false,
             memberStates: s1Snap,
             payments: Array.isArray(appState.payments) ? [...appState.payments] : []
           },
@@ -1292,6 +1316,7 @@
             sessionNumber: 2,
             cutDate: '2026-11-28',
             title: 'Minggu 2 (28 Nov 2026 • +2 Minggu)',
+            isLocked: true,
             memberStates: s2Snap,
             payments: []
           }
@@ -1321,14 +1346,79 @@
       activeSess.title = appState.settings.sessionTitle || activeSess.title;
     }
 
+    function getLocalConfirmedPaymentsBackup() {
+      try {
+        const raw = localStorage.getItem(MY_CONFIRMED_PAYMENTS_KEY);
+        return raw ? JSON.parse(raw) : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function saveLocalConfirmedPaymentBackup(sessionId, paymentObj) {
+      try {
+        const list = getLocalConfirmedPaymentsBackup();
+        const filtered = list.filter(item => !(item.sessionId === sessionId && item.memberId === paymentObj.memberId));
+        filtered.push({ sessionId, memberId: paymentObj.memberId, payment: paymentObj });
+        localStorage.setItem(MY_CONFIRMED_PAYMENTS_KEY, JSON.stringify(filtered));
+      } catch (e) {}
+    }
+
+    function removeLocalConfirmedPaymentBackup(sessionId, memberId) {
+      try {
+        const list = getLocalConfirmedPaymentsBackup();
+        const filtered = list.filter(item => !( (!sessionId || item.sessionId === sessionId) && (!memberId || item.memberId === memberId) ));
+        localStorage.setItem(MY_CONFIRMED_PAYMENTS_KEY, JSON.stringify(filtered));
+      } catch (e) {}
+    }
+
+    function normalizeFirebaseArray(val) {
+      if (!val) return [];
+      if (Array.isArray(val)) return val.filter(Boolean);
+      if (typeof val === 'object') return Object.values(val).filter(Boolean);
+      return [];
+    }
+
     function loadActiveSessionIntoCurrentView() {
       ensureMultiSessionStructure();
       const activeSess = appState.sessions.find(s => s.id === appState.activeSessionId) || appState.sessions[0];
       if (!activeSess) return;
       appState.settings.sessionTitle = activeSess.title;
+      activeSess.payments = normalizeFirebaseArray(activeSess.payments);
+
+      // Re-inject any locally confirmed payment from this device if a race condition on another device temporarily dropped it
+      const myBackups = getLocalConfirmedPaymentsBackup().filter(b => b.sessionId === activeSess.id);
+      myBackups.forEach(b => {
+        if (b.payment && !activeSess.payments.some(p => p.memberId === b.memberId)) {
+          activeSess.payments.unshift(b.payment);
+          if (!activeSess.memberStates) activeSess.memberStates = {};
+          activeSess.memberStates[b.memberId] = {
+            status: 'PAID',
+            lastCutDate: b.payment.cutDate || getTodayDateStr(),
+            note: `✅ Selesai Bayar — ${b.payment.method || 'QR DuitNow'} (Ref: ${b.payment.bankRefNo || '-'})`
+          };
+        }
+      });
+
       const snap = activeSess.memberStates || {};
+      const paidPaymentMap = {};
+      activeSess.payments.forEach(p => {
+        if (p && p.memberId && p.status === 'APPROVED') {
+          paidPaymentMap[p.memberId] = p;
+        }
+      });
+
       (appState.members || []).forEach(m => {
-        if (snap[m.id]) {
+        // Guarantee: if an approved payment record exists for this member in this session, their status MUST be PAID!
+        if (paidPaymentMap[m.id]) {
+          const pRec = paidPaymentMap[m.id];
+          m.status = 'PAID';
+          m.lastCutDate = pRec.cutDate || (snap[m.id] && snap[m.id].lastCutDate) || activeSess.cutDate || '2026-11-14';
+          m.note = (snap[m.id] && snap[m.id].note && snap[m.id].note.includes('Selesai'))
+            ? snap[m.id].note
+            : `✅ Selesai Bayar — ${pRec.method || 'QR DuitNow'} (Ref: ${pRec.bankRefNo || '-'})`;
+          if (snap[m.id]) snap[m.id].status = 'PAID';
+        } else if (snap[m.id]) {
           m.status = snap[m.id].status || 'UNPAID';
           m.lastCutDate = snap[m.id].lastCutDate || activeSess.cutDate || '2026-11-14';
           m.note = snap[m.id].note || '';
@@ -1338,25 +1428,231 @@
           m.note = 'Perlu jelaskan bayaran gunting rambut';
         }
       });
-      appState.payments = Array.isArray(activeSess.payments) ? [...activeSess.payments] : [];
+      appState.payments = [...activeSess.payments];
       renderSessionDropdownUI();
+    }
+
+    function countUniquePaidInSession(sess) {
+      if (!sess) return 0;
+      const paidIds = new Set();
+      Object.keys(sess.memberStates || {}).forEach(mId => {
+        if (sess.memberStates[mId] && sess.memberStates[mId].status === 'PAID') {
+          paidIds.add(mId);
+        }
+      });
+      normalizeFirebaseArray(sess.payments).forEach(p => {
+        if (p && p.memberId && p.status === 'APPROVED') {
+          paidIds.add(p.memberId);
+        }
+      });
+      return paidIds.size;
     }
 
     function renderSessionDropdownUI() {
       const sel = document.getElementById('activeSessionSelect');
       if (!sel) return;
       ensureMultiSessionStructure();
+
+      const pubBtn = document.getElementById('publicNewSessionBtn');
+      if (pubBtn) {
+        pubBtn.className = appState.adminUnlocked
+          ? 'px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold flex items-center gap-1.5 shrink-0 transition'
+          : 'hidden';
+      }
+
       sel.innerHTML = appState.sessions.map(s => {
-        const paidCount = Object.values(s.memberStates || {}).filter(st => st.status === 'PAID').length;
+        const paidCount = countUniquePaidInSession(s);
         const totalCount = (appState.members || []).length || 71;
-        return `<option value="${escapeHtml(s.id)}">${escapeHtml(s.title)} — (${paidCount}/${totalCount} Selesai)</option>`;
+        const lockIcon = s.isLocked ? '🔒 [DIKUNCI AJK] ' : '🟢 ';
+        // Normal members cannot switch into a locked future session that has 0 payments
+        const disableForMember = (!appState.adminUnlocked && s.isLocked && paidCount === 0 && s.id !== appState.activeSessionId) ? 'disabled' : '';
+        return `<option value="${escapeHtml(s.id)}" ${disableForMember}>${lockIcon}${escapeHtml(s.title)} — (${paidCount}/${totalCount} Selesai)</option>`;
       }).join('');
       sel.value = appState.activeSessionId;
 
+      const activeSess = appState.sessions.find(s => s.id === appState.activeSessionId) || appState.sessions[0];
       const badge = document.getElementById('sessionLockBadge');
-      if (badge) {
-        const idx = appState.sessions.findIndex(s => s.id === appState.activeSessionId);
-        badge.textContent = `Sesi #${idx + 1} Daripada ${appState.sessions.length}`;
+      if (badge && activeSess) {
+        if (activeSess.isLocked) {
+          badge.textContent = '🔒 Minggu Dikunci Oleh AJK';
+          badge.className = 'px-2.5 py-0.5 text-[10px] font-bold rounded-full bg-rose-100 text-rose-800 border border-rose-200';
+        } else {
+          badge.textContent = '🟢 Minggu Dibuka (Aktif)';
+          badge.className = 'px-2.5 py-0.5 text-[10px] font-bold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200';
+        }
+      }
+      renderAjkSessionsManager();
+    }
+
+    function renderAjkSessionsManager() {
+      const container = document.getElementById('ajkSessionsManagerList');
+      if (!container) return;
+      ensureMultiSessionStructure();
+      const totalCount = (appState.members || []).length || 71;
+
+      container.innerHTML = appState.sessions.map((s, idx) => {
+        const paidCount = countUniquePaidInSession(s);
+        const isCurrent = s.id === appState.activeSessionId;
+        const isLocked = Boolean(s.isLocked);
+        return `
+          <div class="p-4 rounded-2xl border ${isCurrent ? 'border-2 border-emerald-600 bg-emerald-50/30' : 'border-slate-200 bg-slate-50/60'} flex flex-col justify-between gap-3">
+            <div class="flex items-start justify-between gap-2">
+              <div>
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <span class="px-2 py-0.5 text-[10px] font-extrabold rounded bg-slate-900 text-white">MINGGU #${idx + 1}</span>
+                  ${isCurrent ? '<span class="px-2 py-0.5 text-[10px] font-bold rounded bg-emerald-600 text-white">DIPAPARKAN SEKARANG</span>' : ''}
+                  <span class="px-2 py-0.5 text-[10px] font-bold rounded ${isLocked ? 'bg-rose-100 text-rose-800 border border-rose-200' : 'bg-emerald-100 text-emerald-800 border border-emerald-200'}">
+                    ${isLocked ? '🔒 LOCKED (Dikunci)' : '🔓 UNLOCKED (Dibuka)'}
+                  </span>
+                </div>
+                <h4 class="text-sm font-bold text-slate-900 mt-1.5">${escapeHtml(s.title)}</h4>
+                <p class="text-xs text-slate-600 mt-0.5">Bayaran Selesai: <strong>${paidCount} / ${totalCount} Anggota</strong> (${formatRM(paidCount * (parseFloat(appState.settings.feeRate) || 8))})</p>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-200/80">
+              <button type="button" onclick="ajkToggleSessionLock('${s.id}')" class="px-3 py-1.5 rounded-xl text-xs font-bold transition ${isLocked ? 'bg-emerald-600 hover:bg-emerald-500 text-white' : 'bg-rose-600 hover:bg-rose-500 text-white'}">
+                ${isLocked ? '🔓 Unlock Minggu Ini' : '🔒 Lock Minggu Ini'}
+              </button>
+              <button type="button" onclick="ajkSetDefaultActiveSession('${s.id}')" class="px-3 py-1.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-800 text-xs font-semibold transition">
+                📌 Jadikan Minggu Utama Semua Anggota
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function ajkToggleSessionLock(sessionId) {
+      if (!appState.adminUnlocked) {
+        showToast('Hanya AJK boleh Lock atau Unlock minggu!', 'error');
+        return;
+      }
+      syncCurrentViewIntoActiveSession();
+      const target = appState.sessions.find(s => s.id === sessionId);
+      if (!target) return;
+      target.isLocked = !target.isLocked;
+      saveAppState();
+      await pushStateToFirebaseCloud(true);
+      renderSessionDropdownUI();
+      renderMemberList();
+      showToast(`Status "${target.title}" telah ditukar kepada ${target.isLocked ? '🔒 DIKUNCI (LOCKED)' : '🔓 DIBUKA (UNLOCKED)'}!`);
+    }
+
+    async function ajkSetDefaultActiveSession(sessionId) {
+      if (!appState.adminUnlocked) {
+        showToast('Hanya AJK boleh menetapkan minggu utama!', 'error');
+        return;
+      }
+      syncCurrentViewIntoActiveSession();
+      const target = appState.sessions.find(s => s.id === sessionId);
+      if (!target) return;
+      target.isLocked = false; // Automatically unlock when setting as active main week
+      appState.activeSessionId = target.id;
+      loadActiveSessionIntoCurrentView();
+      saveAppState();
+      await pushStateToFirebaseCloud(true);
+      updateHeaderAndKPIs();
+      renderMemberList();
+      renderHistoryList();
+      renderAdminQuickMarkTable();
+      showToast(`"${target.title}" kini ditetapkan sebagai minggu aktif untuk semua 71 anggota!`);
+    }
+
+    async function ajkMergeAllSessionsIntoFirst(silentAuto = false) {
+      ensureMultiSessionStructure();
+      syncCurrentViewIntoActiveSession();
+      if (appState.sessions.length < 2) {
+        if (!silentAuto) showToast('Tiada minggu kedua untuk digabungkan.', 'warning');
+        return;
+      }
+
+      const s1 = appState.sessions[0];
+      s1.title = 'Minggu 1 (14 Nov 2026)';
+      s1.isLocked = false;
+      if (!s1.memberStates) s1.memberStates = {};
+      s1.payments = normalizeFirebaseArray(s1.payments);
+
+      let movedCount = 0;
+      for (let i = 1; i < appState.sessions.length; i++) {
+        const other = appState.sessions[i];
+        const otherPayments = normalizeFirebaseArray(other.payments);
+        const otherStates = other.memberStates || {};
+
+        // 1. Move any payments from other session into Minggu 1 (deduplicating by memberId so nobody is double-counted!)
+        otherPayments.forEach(p => {
+          if (!p || !p.memberId) return;
+          const alreadyHasApprovedInS1 = s1.payments.some(existing => existing.memberId === p.memberId && existing.status === 'APPROVED');
+          if (!alreadyHasApprovedInS1) {
+            const clonedPay = { ...p, id: 'GR-' + (1001 + s1.payments.length + movedCount) };
+            s1.payments.unshift(clonedPay);
+            movedCount++;
+          }
+          s1.memberStates[p.memberId] = {
+            status: 'PAID',
+            lastCutDate: p.cutDate || '2026-11-15',
+            note: p.note || `✅ Selesai Bayar (Ref: ${p.bankRefNo || '-'})`
+          };
+        });
+
+        // 2. Also check memberStates in other session in case someone was marked PAID manually by AJK in Minggu 2
+        Object.keys(otherStates).forEach(mId => {
+          const st = otherStates[mId];
+          if (st && st.status === 'PAID') {
+            if (!s1.memberStates[mId] || s1.memberStates[mId].status !== 'PAID') {
+              s1.memberStates[mId] = { ...st };
+              movedCount++;
+            }
+            if (!s1.payments.some(existing => existing.memberId === mId && existing.status === 'APPROVED')) {
+              const memberObj = appState.members.find(m => m.id === mId);
+              s1.payments.unshift({
+                id: 'GR-' + (1001 + s1.payments.length + movedCount),
+                memberId: mId,
+                memberName: memberObj ? memberObj.name : mId,
+                memberGroup: 'Company Ismail Nasiruddin (Lelaki)',
+                cutDate: st.lastCutDate || '2026-11-15',
+                paidAt: getNowDateTimeStr(),
+                amount: parseFloat(appState.settings.feeRate) || 8.00,
+                method: 'QR DuitNow',
+                bankRefNo: 'GABUNG-M2-' + mId,
+                mandatoryRefCode: memberObj ? getMemberMandatoryRefCode(memberObj) : mId,
+                receiptFileName: `RESIT_${mId}.jpg`,
+                receiptDataUrl: '',
+                status: 'APPROVED',
+                note: st.note || 'Digabungkan dari Minggu 2'
+              });
+            }
+          }
+        });
+
+        // 3. Reset Minggu 2 clean for 28 Nov 2026 and LOCK IT so no member can accidentally enter Minggu 2 before AJK unlocks it!
+        const cleanSnap = {};
+        (appState.members || []).forEach(m => {
+          cleanSnap[m.id] = {
+            status: 'UNPAID',
+            lastCutDate: other.cutDate || '2026-11-28',
+            note: 'Perlu jelaskan bayaran gunting rambut'
+          };
+        });
+        other.memberStates = cleanSnap;
+        other.payments = [];
+        other.isLocked = true;
+      }
+
+      appState.activeSessionId = s1.id;
+      loadActiveSessionIntoCurrentView();
+      saveAppState();
+      await pushStateToFirebaseCloud(true);
+      updateHeaderAndKPIs();
+      renderMemberList();
+      renderHistoryList();
+      if (appState.adminUnlocked) {
+        renderAdminQuickMarkTable();
+        renderAdminVerifyList();
+        renderAjkSessionsManager();
+      }
+      if (!silentAuto || movedCount > 0) {
+        showToast(`✅ Selesai! Semua bayaran Minggu 1 & Minggu 2 telah digabungkan ke Minggu 1, dan Minggu 2 kini DIKUNCI (🔒).`);
       }
     }
 
@@ -1364,9 +1660,19 @@
       syncCurrentViewIntoActiveSession();
       const found = appState.sessions.find(s => s.id === targetSessionId);
       if (!found) return;
+      if (!appState.adminUnlocked && found.isLocked && countUniquePaidInSession(found) === 0) {
+        showToast('🔒 Minggu ini masih dikunci oleh AJK dan belum dibuka untuk bayaran.', 'warning');
+        renderSessionDropdownUI();
+        return;
+      }
       appState.activeSessionId = found.id;
       loadActiveSessionIntoCurrentView();
-      saveAppState();
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+      } catch (e) {}
+      if (appState.adminUnlocked) {
+        pushStateToFirebaseCloud();
+      }
       applyPaymentChannelVisibility();
       updateHeaderAndKPIs();
       renderMemberList();
@@ -1424,28 +1730,109 @@
     }
 
     function applyRemoteCloudPayload(remoteData) {
-      if (!remoteData || !Array.isArray(remoteData.members)) return;
+      const remoteMembers = normalizeFirebaseArray(remoteData && remoteData.members);
+      if (!remoteData || remoteMembers.length === 0) return;
       isApplyingRemoteUpdate = true;
       try {
         if (remoteData.settings) {
           appState.settings = { ...appState.settings, ...remoteData.settings };
         }
-        appState.members = remoteData.members;
-        appState.payments = Array.isArray(remoteData.payments) ? remoteData.payments : [];
-        if (Array.isArray(remoteData.sessions) && remoteData.sessions.length > 0) {
-          appState.sessions = remoteData.sessions;
-          appState.activeSessionId = remoteData.activeSessionId || remoteData.sessions[0].id;
+        appState.members = remoteMembers;
+        appState.payments = normalizeFirebaseArray(remoteData.payments);
+
+        let remoteSessions = normalizeFirebaseArray(remoteData.sessions);
+        let didAutoMergeSplitSession = false;
+        if (remoteSessions.length > 0) {
+          remoteSessions.forEach(s => {
+            s.payments = normalizeFirebaseArray(s.payments);
+            if (!s.memberStates) s.memberStates = {};
+          });
+
+          // Auto-merge premature 'SESI_2' (28 Nov 2026) payments made before 24 Nov 2026 into SESI_1 (Minggu 1), deduplicate by memberId, and LOCK SESI_2!
+          if (remoteSessions.length >= 2 && getTodayDateStr() < '2026-11-24') {
+            const primarySess = remoteSessions[0];
+            primarySess.title = 'Minggu 1 (14 Nov 2026)';
+            primarySess.isLocked = Boolean(primarySess.isLocked);
+            const splitSess = remoteSessions[1];
+            const splitPaidCount = countUniquePaidInSession(splitSess);
+
+            if (splitPaidCount > 0 || !splitSess.isLocked) {
+              (splitSess.payments || []).forEach(p => {
+                if (!p || !p.memberId) return;
+                const alreadyInS1 = primarySess.payments.some(existing => existing.memberId === p.memberId && existing.status === 'APPROVED');
+                if (!alreadyInS1) {
+                  const safePayment = { ...p };
+                  if (primarySess.payments.some(existing => existing.id === safePayment.id)) {
+                    safePayment.id = safePayment.id + '-M2';
+                  }
+                  primarySess.payments.unshift(safePayment);
+                }
+                primarySess.memberStates[p.memberId] = {
+                  status: 'PAID',
+                  lastCutDate: p.cutDate || '2026-11-15',
+                  note: p.note || `✅ Selesai Bayar (Ref: ${p.bankRefNo || '-'})`
+                };
+              });
+
+              Object.keys(splitSess.memberStates || {}).forEach(mId => {
+                const st = splitSess.memberStates[mId];
+                if (st && st.status === 'PAID') {
+                  primarySess.memberStates[mId] = { ...st };
+                  if (!primarySess.payments.some(existing => existing.memberId === mId && existing.status === 'APPROVED')) {
+                    const memberObj = remoteMembers.find(m => m.id === mId);
+                    primarySess.payments.unshift({
+                      id: 'GR-M2-' + mId,
+                      memberId: mId,
+                      memberName: memberObj ? memberObj.name : mId,
+                      memberGroup: 'Company Ismail Nasiruddin (Lelaki)',
+                      cutDate: st.lastCutDate || '2026-11-15',
+                      paidAt: getNowDateTimeStr(),
+                      amount: parseFloat(appState.settings.feeRate) || 8.00,
+                      method: 'QR DuitNow',
+                      bankRefNo: 'RESIT-M2-' + mId,
+                      mandatoryRefCode: memberObj ? getMemberMandatoryRefCode(memberObj) : mId,
+                      receiptFileName: `RESIT_${mId}.jpg`,
+                      receiptDataUrl: '',
+                      status: 'APPROVED',
+                      note: st.note || 'Digabungkan dari Minggu 2'
+                    });
+                  }
+                }
+              });
+
+              // Reset Minggu 2 to 0/71 UNPAID and LOCK it so nobody can enter Minggu 2 until AJK unlocks it!
+              const cleanS2 = {};
+              remoteMembers.forEach(m => {
+                cleanS2[m.id] = {
+                  status: 'UNPAID',
+                  lastCutDate: '2026-11-28',
+                  note: 'Perlu jelaskan bayaran gunting rambut'
+                };
+              });
+              splitSess.memberStates = cleanS2;
+              splitSess.payments = [];
+              splitSess.isLocked = true;
+              didAutoMergeSplitSession = true;
+            }
+          }
+
+          appState.sessions = remoteSessions;
+          if (didAutoMergeSplitSession || !appState.activeSessionId || !appState.sessions.some(s => s.id === appState.activeSessionId)) {
+            appState.activeSessionId = appState.sessions[0].id;
+          }
           loadActiveSessionIntoCurrentView();
         } else {
           ensureMultiSessionStructure();
           renderSessionDropdownUI();
         }
         localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+        applyPaymentChannelVisibility();
         populateGroupFilterDropdowns();
         updateHeaderAndKPIs();
         renderMemberList();
         renderHistoryList();
         if (appState.adminUnlocked) {
+          renderAjkQuickChannelToggles();
           renderAdminQuickMarkTable();
           renderAdminVerifyList();
           renderManageMembersList();
@@ -1455,17 +1842,24 @@
       } finally {
         isApplyingRemoteUpdate = false;
       }
+      if (typeof didAutoMergeSplitSession !== 'undefined' && didAutoMergeSplitSession) {
+        pushStateToFirebaseCloud(true);
+        showToast('✅ Rekod bayaran Minggu 1 & Minggu 2 telah digabungkan secara automatik ke dalam satu senarai!');
+      }
     }
 
-    async function pushStateToFirebaseCloud() {
-      if (isApplyingRemoteUpdate || !firebaseDbRef) return;
+    async function pushStateToFirebaseCloud(allowBeforeInitialLoad = false) {
+      if (isApplyingRemoteUpdate || !firebaseDbRef) return false;
+      if (!hasLoadedInitialCloudSnapshot && !allowBeforeInitialLoad) return false;
       try {
         const payload = getSharedCloudPayload();
         await firebaseDbRef.set(payload);
-        updateCloudSyncBadge('online', 'Firebase Real-Time Aktif');
+        updateCloudSyncBadge('online', 'Firebase Real-Time Aktif (lucky-draw-66c24)');
+        return true;
       } catch (err) {
         console.warn('Firebase write error:', err);
         updateCloudSyncBadge('error', 'Semak Firebase Rules / URL');
+        return false;
       }
     }
 
@@ -1494,12 +1888,14 @@
             const db = firebaseAppInstance.database();
             firebaseDbRef = db.ref('egunting_company_ismail_nasiruddin');
             firebaseDbRef.on('value', (snapshot) => {
+              hasLoadedInitialCloudSnapshot = true;
               const val = snapshot.val();
-              if (val && Array.isArray(val.members)) {
+              const remMembers = normalizeFirebaseArray(val && val.members);
+              if (val && remMembers.length > 0) {
                 applyRemoteCloudPayload(val);
                 updateCloudSyncBadge('online', 'Firebase Real-Time Aktif (lucky-draw-66c24)');
               } else {
-                pushStateToFirebaseCloud();
+                pushStateToFirebaseCloud(true);
                 updateCloudSyncBadge('online', 'Firebase Real-Time Aktif (lucky-draw-66c24)');
               }
             }, (err) => {
@@ -1956,6 +2352,11 @@
     }
 
     function openPaymentModalForMember(memberId, showPickerInitially = false) {
+      const activeSess = appState.sessions && appState.sessions.find(s => s.id === appState.activeSessionId);
+      if (activeSess && activeSess.isLocked && !appState.adminUnlocked) {
+        showToast('🔒 Minggu ini telah dikunci oleh AJK. Pembayaran tidak boleh diubah atau ditambah.', 'warning');
+        return;
+      }
       const searchEl = document.getElementById('payModalMemberSearch');
       if (searchEl) searchEl.value = '';
       populatePaymentModalMembers(memberId, '');
@@ -2692,7 +3093,7 @@
       reader.readAsDataURL(file);
     }
 
-    function submitMemberPayment() {
+    async function submitMemberPayment() {
       const memberId = document.getElementById('payModalMemberSelect').value;
       const member = appState.members.find(m => m.id === memberId);
       if (!member) {
@@ -2734,7 +3135,13 @@
       };
       const chosenMethodLabel = methodDisplayMap[appState.selectedPaymentMethod] || 'QR DuitNow';
 
-      appState.payments.unshift({
+      const submitBtn = document.getElementById('submitPaymentBtn');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = '⏳ Menyimpan Ke Cloud...';
+      }
+
+      const newPaymentObj = {
         id: newPaymentId,
         memberId: member.id,
         memberName: member.name,
@@ -2750,17 +3157,36 @@
         receiptHash: appState.uploadedReceiptHash || '',
         status: 'APPROVED',
         note: `${note} (Disahkan Automatik)`
-      });
+      };
 
+      appState.payments.unshift(newPaymentObj);
       member.status = 'PAID';
       member.lastCutDate = cutDate;
       member.note = `✅ Selesai Bayar — ${chosenMethodLabel} (Ref: ${bankRefRaw})`;
 
-      saveAppState();
+      // Save permanent local backup so even if user refreshes immediately, their payment is never lost
+      saveLocalConfirmedPaymentBackup(appState.activeSessionId, newPaymentObj);
+
+      syncCurrentViewIntoActiveSession();
+      renderSessionDropdownUI();
+      appState.lastCloudTimestamp = Date.now();
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+      } catch (e) {}
+
+      // Wait for Firebase Cloud write to finish before closing modal so refreshing the page never loses data!
+      await pushStateToFirebaseCloud(true);
+
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Hantar Bayaran';
+      }
+
       closePaymentModal();
       updateHeaderAndKPIs();
       renderMemberList();
-      showToast(`✅ Bayaran ${member.name} (${formatRM(amount)}) LULUS AUTOMATIK! Status terus dikemaskini kepada Selesai Bayar.`);
+      renderHistoryList();
+      showToast(`✅ Bayaran ${member.name} (${formatRM(amount)}) BERJAYA DISIMPAN KE CLOUD!`);
     }
 
     // ==========================================
@@ -2993,6 +3419,7 @@
       if (newStatus === 'UNPAID' || newStatus === 'NOT_CUT') {
         // Remove previous payment record for this member in the active session so Selesai Bayar (Terkumpul) decreases accurately
         appState.payments = appState.payments.filter(p => p.memberId !== memberId);
+        removeLocalConfirmedPaymentBackup(appState.activeSessionId, memberId);
       }
       if (newStatus === 'UNPAID') {
         m.lastCutDate = getTodayDateStr();
@@ -3400,6 +3827,7 @@
 
       if (pendingDeleteHistoryTarget === 'ALL') {
         appState.payments = [];
+        removeLocalConfirmedPaymentBackup(appState.activeSessionId, null);
         appState.members.forEach(m => {
           if (m.status === 'PAID' || m.status === 'PENDING') {
             m.status = 'UNPAID';
@@ -3411,6 +3839,7 @@
         const idx = appState.payments.findIndex(p => p.id === pendingDeleteHistoryTarget);
         if (idx !== -1) {
           const removed = appState.payments.splice(idx, 1)[0];
+          removeLocalConfirmedPaymentBackup(appState.activeSessionId, removed.memberId);
           const member = appState.members.find(m => m.id === removed.memberId);
           // If member has no other approved payment in this session, revert status to UNPAID
           const stillHasPayment = appState.payments.some(p => p.memberId === removed.memberId && p.status === 'APPROVED');
